@@ -1,5 +1,3 @@
-
-
 /* =========================================
    Mission43 Universal Layout System v1
    Header + Footer + Structural Alignment
@@ -19,8 +17,8 @@ body,
 
 :root {
   /* Brand tokens */
-  --m43-red: #f02f4e;
-  --m43-red-press: #d41636;
+  --m43-red: #d41636;
+  --m43-red-press: #f02f4e;
   --m43-ink: #171717;
   --m43-muted: #a1a1a1;
   --m43-surface: #e6e4e1;
@@ -112,7 +110,7 @@ body,
   color: #ffffff !important;
   border: 1px solid transparent;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: -0.02em;
   text-transform: uppercase;
 }
@@ -128,7 +126,7 @@ body,
 .wForm .primaryAction:active,
 .wForm button.primaryAction:active,
 .wForm button[type="submit"]:active {
-  transform: translateY(1px);
+  transform: scale(0.98);
 }
 
 .wForm input[type="submit"]:focus,
