@@ -1,0 +1,304 @@
+
+
+/* =========================================
+   Mission43 Universal Layout System v1
+   Header + Footer + Structural Alignment
+========================================= */
+
+/* Base font enforcement */
+body,
+.wFormContainer {
+  font-family: "Inter Variable", Inter, sans-serif;
+  color: #171717;
+}
+
+/* =========================================
+   FORM CONTROLS (Buttons + Inputs) v1
+   Brand alignment with mission43.org / Framer
+========================================= */
+
+:root {
+  /* Brand tokens */
+  --m43-red: #f02f4e;
+  --m43-red-press: #d41636;
+  --m43-ink: #171717;
+  --m43-muted: #a1a1a1;
+  --m43-surface: #e6e4e1;
+  --m43-surface-focus: #eeeeee;
+  --m43-radius: 10px;
+  --m43-font: "Inter Variable", Inter, sans-serif;
+}
+
+/* ---------- Labels ---------- */
+.wForm .label,
+.wForm label,
+.wFormContainer label {
+  font-family: var(--m43-font);
+  color: var(--m43-ink);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* ---------- Text inputs / selects / textareas ---------- */
+.wForm input[type="text"],
+.wForm input[type="email"],
+.wForm input[type="tel"],
+.wForm input[type="number"],
+.wForm input[type="url"],
+.wForm input[type="password"],
+.wForm select,
+.wForm textarea {
+  font-family: var(--m43-font) !important;
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--m43-ink);
+  background: var(--m43-surface);
+  border: 1px solid transparent;
+  border-radius: var(--m43-radius);
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.wForm input::placeholder,
+.wForm textarea::placeholder {
+  color: var(--m43-muted);
+}
+
+.wForm input[type="text"]:focus,
+.wForm input[type="email"]:focus,
+.wForm input[type="tel"]:focus,
+.wForm input[type="number"]:focus,
+.wForm input[type="url"]:focus,
+.wForm input[type="password"]:focus,
+.wForm select:focus,
+.wForm textarea:focus {
+  background: var(--m43-surface-focus);
+  outline: none;
+  border-color: rgba(240, 47, 78, 0.45);
+  box-shadow: 0 0 0 3px rgba(240, 47, 78, 0.18);
+}
+
+/* ---------- Primary buttons (Submit / Next / Previous) ---------- */
+/*
+  FormAssembly commonly uses input[type=submit], button, and .primaryAction.
+  We style all, but keep selectors narrow to avoid touching header/footer links.
+*/
+.wForm input[type="submit"],
+.wForm input[type="button"],
+.wForm button,
+.wForm .primaryAction,
+.wForm .secondaryAction {
+  font-family: var(--m43-font) !important;
+  border-radius: var(--m43-radius);
+  height: 40px;
+  min-height: 40px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Primary */
+.wForm input[type="submit"],
+.wForm .primaryAction,
+.wForm button.primaryAction,
+.wForm button[type="submit"] {
+  background: var(--m43-red);
+  color: #ffffff !important;
+  border: 1px solid transparent;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.wForm input[type="submit"]:hover,
+.wForm .primaryAction:hover,
+.wForm button.primaryAction:hover,
+.wForm button[type="submit"]:hover {
+  background: var(--m43-red-press);
+}
+
+.wForm input[type="submit"]:active,
+.wForm .primaryAction:active,
+.wForm button.primaryAction:active,
+.wForm button[type="submit"]:active {
+  transform: translateY(1px);
+}
+
+.wForm input[type="submit"]:focus,
+.wForm .primaryAction:focus,
+.wForm button.primaryAction:focus,
+.wForm button[type="submit"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(240, 47, 78, 0.22);
+}
+
+/* Secondary (e.g., Previous) */
+.wForm .secondaryAction,
+.wForm input[type="button"].secondaryAction,
+.wForm button.secondaryAction {
+  background: transparent;
+  color: var(--m43-ink) !important;
+  border: 1px solid rgba(23, 23, 23, 0.18);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.wForm .secondaryAction:hover,
+.wForm input[type="button"].secondaryAction:hover,
+.wForm button.secondaryAction:hover {
+  background: rgba(23, 23, 23, 0.04);
+}
+
+/* Prevent fixed-width buttons unless FormAssembly adds it inline */
+.wForm input[type="submit"],
+.wForm .primaryAction,
+.wForm .secondaryAction,
+.wForm button {
+  width: auto;
+  max-width: 100%;
+}
+
+/* ---------- Validation / error styling (works with core JS gating) ---------- */
+.m43-inline-error,
+.wForm .errMsg,
+.wForm .errorMsg,
+.wForm .errorMessage {
+  font-family: var(--m43-font);
+  color: var(--m43-red-press);
+  font-size: 13px;
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
+.m43-has-error input,
+.m43-has-error select,
+.m43-has-error textarea,
+.wForm .errFld input,
+.wForm .errFld select,
+.wForm .errFld textarea {
+  border-color: rgba(240, 47, 78, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(240, 47, 78, 0.14) !important;
+}
+
+/* ---------- Subtle interaction smoothing ---------- */
+.wForm input,
+.wForm select,
+.wForm textarea,
+.wForm button,
+.wForm input[type="submit"],
+.wForm .primaryAction,
+.wForm .secondaryAction {
+  transition: background-color 0.15s ease,
+              border-color 0.15s ease,
+              box-shadow 0.15s ease,
+              transform 0.05s ease;
+}
+
+/* ---------- Mobile spacing polish ---------- */
+@media (max-width: 900px) {
+  .wForm input[type="submit"],
+  .wForm input[type="button"],
+  .wForm button,
+  .wForm .primaryAction,
+  .wForm .secondaryAction {
+    width: 100%;
+  }
+}
+
+/* ================= HEADER ================= */
+
+.fa-global-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e6e4e1;
+  padding: 24px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fa-global-header a {
+  text-decoration: none;
+  margin-left: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #171717;
+  transition: color 0.2s ease;
+}
+
+.fa-global-header a:hover {
+  color: #f02f4e;
+}
+
+/* ================= FOOTER ================= */
+
+.fa-global-footer {
+  background: #ffffff;
+  border-top: 1px solid #e6e4e1;
+  margin-top: 80px;
+  padding: 60px 0;
+  font-size: 14px;
+}
+
+.fa-global-footer a {
+  color: #171717;
+  text-decoration: none;
+  margin: 0 12px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.fa-global-footer a:hover {
+  color: #f02f4e;
+}
+
+.fa-global-footer .footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px;
+  text-align: center;
+}
+
+/* Ensure form container spacing */
+.wFormContainer {
+  margin-top: 40px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 900px) {
+
+  .fa-global-header {
+    padding: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fa-global-header a {
+    margin-left: 0;
+    margin-top: 12px;
+  }
+
+  .fa-global-footer .footer-inner {
+    padding: 0 20px;
+  }
+
+  .wFormContainer {
+    padding: 0 20px;
+  }
+}
