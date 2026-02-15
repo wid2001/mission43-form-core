@@ -50,71 +50,101 @@
   }
 
   function validatePhones() {
+    let valid = true;
     const phones = document.querySelectorAll(PHONE_SELECTOR);
 
     phones.forEach((input) => {
+      delete input.dataset.m43Error;
+
       const digits = digitsOnly(input.value);
-      if (input.required && digits.length !== 10) {
-        input.setCustomValidity(
-          "Please enter a valid 10-digit phone number."
-        );
-      } else {
-        input.setCustomValidity("");
+      const isRequired =
+        input.classList.contains("required") ||
+        input.getAttribute("aria-required") === "true";
+
+      if ((isRequired && !digits.length) || (digits.length && digits.length !== 10)) {
+        input.dataset.m43Error = "Please enter a valid 10-digit phone number.";
+        valid = false;
       }
     });
+
+    return valid;
   }
 
   function validateEmailFormat(input) {
+    delete input.dataset.m43Error;
+
     const value = input.value.trim();
-    if (!value) {
-      if (input.required) {
-        input.setCustomValidity("This field is required.");
+    const isRequired =
+      input.classList.contains("required") ||
+      input.getAttribute("aria-required") === "true";
+
+    if (isRequired && !value) {
+      input.dataset.m43Error = "This field is required.";
+      return false;
+    }
+
+    if (value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        input.dataset.m43Error = "Please enter a valid email address.";
+        return false;
       }
-      return;
     }
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(value)) {
-      input.setCustomValidity("Please enter a valid email address.");
-    } else {
-      input.setCustomValidity("");
-    }
+    return true;
   }
 
   function validateEmailMatching() {
-    const fieldsets = document.querySelectorAll("fieldset");
+    let valid = true;
 
-    fieldsets.forEach((fieldset) => {
-      const emails = fieldset.querySelectorAll(EMAIL_SELECTOR);
+    const groups = Array.from(document.querySelectorAll(".section.group"));
+
+    groups.forEach((group) => {
+      const nestedGroup = group.querySelector(".section.group");
+      if (nestedGroup) return;
+
+      const emails = group.querySelectorAll(EMAIL_SELECTOR);
       if (emails.length !== 2) return;
 
       const [email1, email2] = emails;
 
-      if (!email1.value || !email2.value) return;
+      delete email2.dataset.m43Error;
 
-      if (email1.value.trim() !== email2.value.trim()) {
-        email2.setCustomValidity("Email addresses must match.");
-      } else {
-        email2.setCustomValidity("");
+      const v1 = (email1.value || "").trim().toLowerCase();
+      const v2 = (email2.value || "").trim().toLowerCase();
+
+      if (!v1 || !v2) return;
+
+      if (v1 !== v2) {
+        email2.dataset.m43Error = "Email addresses must match.";
+        valid = false;
       }
     });
+
+    return valid;
   }
 
   function validateEmails() {
+    let valid = true;
+
     const emails = document.querySelectorAll(EMAIL_SELECTOR);
+
     emails.forEach((input) => {
-      validateEmailFormat(input);
+      if (!validateEmailFormat(input)) valid = false;
     });
-    validateEmailMatching();
+
+    if (!validateEmailMatching()) valid = false;
+
+    return valid;
   }
 
   function renderBrandErrors(form) {
     const oldSummary = form.querySelector(".m43-error-summary");
     if (oldSummary) oldSummary.remove();
 
-    const invalidFields = Array.from(form.querySelectorAll(":invalid"));
+    const invalidFields = Array.from(
+      form.querySelectorAll("[data-m43-error]")
+    );
     if (!invalidFields.length) return;
 
     const summary = document.createElement("div");
@@ -136,7 +166,7 @@
         field.closest(".oneField")?.querySelector("label");
 
       const message =
-        field.validationMessage || "This field is required.";
+        field.dataset.m43Error || "This field is required.";
 
       const li = document.createElement("li");
       li.textContent = label
@@ -181,16 +211,26 @@
   }
 
   function navGateHandler(event) {
-    const form = event.target.closest("form");
-    if (!form) return;
+    let form;
 
-    validatePhones();
-    validateEmails();
+    if (event.type === "submit") {
+      form = event.target;
+    } else {
+      form = event.target.closest("form");
+    }
+
+    if (!form) return;
 
     clearBrandErrors(form);
 
-    if (!form.checkValidity()) {
+    let hasErrors = false;
+
+    if (!validatePhones()) hasErrors = true;
+    if (!validateEmails()) hasErrors = true;
+
+    if (hasErrors) {
       event.preventDefault();
+      event.stopPropagation();
       event.stopImmediatePropagation();
       renderBrandErrors(form);
     }

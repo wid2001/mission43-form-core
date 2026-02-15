@@ -179,22 +179,16 @@
    7A. CARD-STYLE CHECKBOX / RADIO SYSTEM
    ========================================================= */
 
-.wForm .choices.vertical .oneChoice {
+.wForm .choices .oneChoice {
   margin-bottom: 12px !important;
 }
 
-.wForm .choices.vertical .oneChoice input[type="checkbox"],
-.wForm .choices.vertical .oneChoice input[type="radio"] {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  position: absolute !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  width: 0 !important;
-  height: 0 !important;
+.wForm .choices .oneChoice input[type="checkbox"],
+.wForm .choices .oneChoice input[type="radio"] {
+  display: none !important;
 }
 
-.wForm .choices.vertical .oneChoice label.postField {
+.wForm .choices .oneChoice label.postField {
   display: flex !important;
   align-items: center !important;
   gap: 14px !important;
@@ -211,18 +205,18 @@
 }
 
 /* --- Neutralize FormAssembly default faux checkbox rendering --- */
-.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux::before,
-.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux::after {
+.wForm .choices .oneChoice label.postField .input-checkbox-faux::before,
+.wForm .choices .oneChoice label.postField .input-checkbox-faux::after {
   content: none !important;
 }
 
-.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux {
+.wForm .choices .oneChoice label.postField .input-checkbox-faux {
   box-shadow: none !important;
   background-image: none !important;
 }
 
 /* Faux checkbox alignment */
-.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux {
+.wForm .choices .oneChoice label.postField .input-checkbox-faux {
   width: 18px !important;
   height: 18px !important;
   border-radius: 4px !important;
@@ -234,7 +228,7 @@
 
 /* --- Radio Faux (Correct Class) --- */
 
-.wForm .choices.vertical .oneChoice label.postField .input-radio-faux {
+.wForm .choices .oneChoice label.postField .input-radio-faux {
   width: 18px !important;
   height: 18px !important;
   border-radius: 50% !important;
@@ -246,12 +240,12 @@
   background-image: none !important;
 }
 
-.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux {
+.wForm .choices .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux {
   background: var(--m43-red) !important;
   border-color: var(--m43-red) !important;
 }
 
-.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux::after {
+.wForm .choices .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux::after {
   content: "" !important;
   position: absolute !important;
   width: 8px !important;
@@ -264,18 +258,18 @@
 }
 
 /* Checked state */
-.wForm .choices.vertical .oneChoice input:checked + label.postField {
+.wForm .choices .oneChoice input:checked + label.postField {
   background: rgba(240,47,78,.08) !important;
   border-color: var(--m43-red) !important;
 }
 
 /* Checked check indicator */
-.wForm .choices.vertical .oneChoice input:checked + label.postField .input-checkbox-faux {
+.wForm .choices .oneChoice input:checked + label.postField .input-checkbox-faux {
   background: var(--m43-red) !important;
   border-color: var(--m43-red) !important;
 }
 
-.wForm .choices.vertical .oneChoice input:checked + label.postField .input-checkbox-faux::after {
+.wForm .choices .oneChoice input:checked + label.postField .input-checkbox-faux::after {
   content: "" !important;
   position: absolute !important;
   left: 4px !important;
