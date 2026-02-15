@@ -232,18 +232,26 @@
   position: relative !important;
 }
 
-/* --- Radio: Circular Indicator Override --- */
+/* --- Radio Faux (Correct Class) --- */
 
-.wForm .choices.vertical .oneChoice input[type="radio"] + label.postField .input-checkbox-faux {
+.wForm .choices.vertical .oneChoice label.postField .input-radio-faux {
+  width: 18px !important;
+  height: 18px !important;
   border-radius: 50% !important;
+  border: 1px solid var(--m43-border) !important;
+  background: #ffffff !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  box-shadow: none !important;
+  background-image: none !important;
 }
 
-.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-checkbox-faux {
+.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux {
   background: var(--m43-red) !important;
   border-color: var(--m43-red) !important;
 }
 
-.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-checkbox-faux::after {
+.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux::after {
   content: "" !important;
   position: absolute !important;
   width: 8px !important;
@@ -324,6 +332,12 @@
   .wForm .section.inline,
   .wForm .inline.group,
   .wForm .oneField.inline {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Force grouped inline fields to stack on mobile */
+  .wForm .section.inline .oneField {
     display: block !important;
     width: 100% !important;
   }

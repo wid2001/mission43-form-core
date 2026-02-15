@@ -1,14 +1,21 @@
 /**
  * Mission43 Core Behavior Layer
- * Phone Masking + Validation
- * Uses IMask 7.6.1 (lazy-loaded)
+ * Phone Masking
+ * Email Validation + Confirm Matching
+ * Navigation Gate Enforcement
+ * Uses IMask 7.6.1 (UMD build)
  */
 
-(function M43CorePhone() {
-  const IMASK_CDN = "https://esm.sh/imask@7.6.1";
+(function M43Core() {
+
+  const IMASK_CDN =
+    "https://cdn.jsdelivr.net/npm/imask@7.6.1/dist/imask.min.js";
 
   const PHONE_SELECTOR =
-    'input[type="tel"], input[name*="phone" i], input[id*="phone" i]';
+    'input[autocomplete="tel"]';
+
+  const EMAIL_SELECTOR =
+    'input[autocomplete="email"]';
 
   const MASK_CONFIG = {
     mask: "(000) 000-0000",
@@ -29,39 +36,81 @@
 
       const script = document.createElement("script");
       script.src = IMASK_CDN;
-      script.type = "module";
-      script.onload = () => {
-        if (window.IMask) {
-          resolve(window.IMask);
-        } else {
-          reject(new Error("IMask failed to attach to window."));
-        }
-      };
+      script.onload = () => resolve(window.IMask);
       script.onerror = reject;
       document.head.appendChild(script);
     });
   }
 
-  function applyMaskToInput(IMaskLib, input) {
+  function applyPhoneMask(IMaskLib, input) {
     if (input.dataset.m43MaskApplied) return;
 
-    const mask = IMaskLib(input, MASK_CONFIG);
-
+    IMaskLib(input, MASK_CONFIG);
     input.dataset.m43MaskApplied = "true";
+  }
 
-    input.addEventListener("blur", () => {
+  function validatePhones() {
+    const phones = document.querySelectorAll(PHONE_SELECTOR);
+
+    phones.forEach((input) => {
       const digits = digitsOnly(input.value);
-      if (digits.length === 0) return; // allow empty if optional
-      if (digits.length !== 10) {
-        input.setCustomValidity("Please enter a valid 10-digit phone number.");
+      if (input.required && digits.length !== 10) {
+        input.setCustomValidity(
+          "Please enter a valid 10-digit phone number."
+        );
       } else {
         input.setCustomValidity("");
       }
     });
   }
 
+  function validateEmailFormat(input) {
+    const value = input.value.trim();
+    if (!value) {
+      if (input.required) {
+        input.setCustomValidity("This field is required.");
+      }
+      return;
+    }
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(value)) {
+      input.setCustomValidity("Please enter a valid email address.");
+    } else {
+      input.setCustomValidity("");
+    }
+  }
+
+  function validateEmailMatching() {
+    const fieldsets = document.querySelectorAll("fieldset");
+
+    fieldsets.forEach((fieldset) => {
+      const emails = fieldset.querySelectorAll(EMAIL_SELECTOR);
+      if (emails.length !== 2) return;
+
+      const [email1, email2] = emails;
+
+      if (!email1.value || !email2.value) return;
+
+      if (email1.value.trim() !== email2.value.trim()) {
+        email2.setCustomValidity("Email addresses must match.");
+      } else {
+        email2.setCustomValidity("");
+      }
+    });
+  }
+
+  function validateEmails() {
+    const emails = document.querySelectorAll(EMAIL_SELECTOR);
+    emails.forEach((input) => {
+      validateEmailFormat(input);
+    });
+    validateEmailMatching();
+  }
+
   function renderBrandErrors(form) {
-    // Remove old summary
     const oldSummary = form.querySelector(".m43-error-summary");
     if (oldSummary) oldSummary.remove();
 
@@ -89,18 +138,15 @@
       const message =
         field.validationMessage || "This field is required.";
 
-      // --- SUMMARY ENTRY ---
       const li = document.createElement("li");
       li.textContent = label
         ? `${label.textContent.trim()} — ${message}`
         : message;
       list.appendChild(li);
 
-      // --- INLINE ERROR ---
       field.classList.add("m43-field-error");
       field.setAttribute("aria-invalid", "true");
 
-      // Remove existing inline error if present
       const existingInline =
         field.parentElement.querySelector(".m43-inline-error");
       if (existingInline) existingInline.remove();
@@ -113,7 +159,6 @@
       inline.id = inlineId;
 
       field.setAttribute("aria-describedby", inlineId);
-
       field.parentElement.appendChild(inline);
     });
 
@@ -146,21 +191,48 @@
 
     if (!form.checkValidity()) {
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       renderBrandErrors(form);
     }
   }
 
   async function init() {
-    const phoneInputs = document.querySelectorAll(PHONE_SELECTOR);
-    if (!phoneInputs.length) return;
 
-    try {
-      const IMaskLib = await loadIMask();
-      phoneInputs.forEach((input) => applyMaskToInput(IMaskLib, input));
-    } catch (err) {
-      console.error("M43 Phone Mask failed to load IMask:", err);
+    const phoneInputs = document.querySelectorAll(PHONE_SELECTOR);
+
+    if (phoneInputs.length) {
+      try {
+        const IMaskLib = await loadIMask();
+        phoneInputs.forEach((input) =>
+          applyPhoneMask(IMaskLib, input)
+        );
+      } catch (err) {
+        console.error("M43 IMask load failed:", err);
+      }
     }
+
+    document.addEventListener(
+      "click",
+      (e) => {
+        const target = e.target;
+
+        if (
+          target.matches('button[type="submit"]') ||
+          target.matches(".wFormNextButton") ||
+          target.matches(".wFormBackButton") ||
+          target.closest(".wfPagingButtons")
+        ) {
+          navGateHandler(e);
+        }
+      },
+      true
+    );
+
+    document.addEventListener(
+      "submit",
+      navGateHandler,
+      true
+    );
   }
 
   if (document.readyState === "loading") {
@@ -168,4 +240,5 @@
   } else {
     init();
   }
+
 })();
