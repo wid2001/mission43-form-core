@@ -183,9 +183,11 @@
   margin-bottom: 12px !important;
 }
 
-.wForm .choices .oneChoice input[type="checkbox"],
-.wForm .choices .oneChoice input[type="radio"] {
-  display: none !important;
+.wForm input[type="checkbox"],
+.wForm input[type="radio"] {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .wForm .choices .oneChoice label.postField {

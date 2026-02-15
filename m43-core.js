@@ -45,7 +45,8 @@
   function applyPhoneMask(IMaskLib, input) {
     if (input.dataset.m43MaskApplied) return;
 
-    IMaskLib(input, MASK_CONFIG);
+    const maskInstance = IMaskLib(input, MASK_CONFIG);
+    input._m43Mask = maskInstance;
     input.dataset.m43MaskApplied = "true";
   }
 
@@ -56,12 +57,17 @@
     phones.forEach((input) => {
       delete input.dataset.m43Error;
 
-      const digits = digitsOnly(input.value);
+      const digits = input._m43Mask
+        ? input._m43Mask.unmaskedValue
+        : digitsOnly(input.value);
       const isRequired =
         input.classList.contains("required") ||
         input.getAttribute("aria-required") === "true";
 
-      if ((isRequired && !digits.length) || (digits.length && digits.length !== 10)) {
+      if (
+        (isRequired && !digits.length) ||
+        (digits.length > 0 && digits.length !== 10)
+      ) {
         input.dataset.m43Error = "Please enter a valid 10-digit phone number.";
         valid = false;
       }
@@ -161,6 +167,8 @@
     const list = summary.querySelector("ul");
 
     invalidFields.forEach((field) => {
+      if (!field || !(field instanceof HTMLElement)) return;
+
       const label =
         form.querySelector(`label[for="${field.id}"]`) ||
         field.closest(".oneField")?.querySelector("label");
@@ -185,7 +193,7 @@
       inline.className = "m43-inline-error";
       inline.textContent = message;
 
-      const inlineId = `m43-error-${field.name || field.id}`;
+      const inlineId = `m43-error-${field.name || field.id || "field"}`;
       inline.id = inlineId;
 
       field.setAttribute("aria-describedby", inlineId);
