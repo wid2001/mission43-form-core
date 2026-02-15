@@ -188,6 +188,8 @@
   position: absolute !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .wForm .choices .oneChoice label.postField {

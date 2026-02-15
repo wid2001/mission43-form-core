@@ -185,8 +185,11 @@
       field.classList.add("m43-field-error");
       field.setAttribute("aria-invalid", "true");
 
+      const fieldContainer =
+        field.closest(".oneField") || field.parentElement;
+
       const existingInline =
-        field.parentElement.querySelector(".m43-inline-error");
+        fieldContainer.querySelector(".m43-inline-error");
       if (existingInline) existingInline.remove();
 
       const inline = document.createElement("div");
@@ -197,7 +200,7 @@
       inline.id = inlineId;
 
       field.setAttribute("aria-describedby", inlineId);
-      field.parentElement.appendChild(inline);
+      fieldContainer.appendChild(inline);
     });
 
     form.prepend(summary);
