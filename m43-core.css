@@ -113,15 +113,55 @@
 
 /* =========================================================
    6. ERROR SYSTEM
+   Subtle, modern, soft-background UI
    ========================================================= */
 
-.m43InlineError {
-  margin-top: 8px;
-  padding: 10px 12px;
+/* --- 6A. Summary Block --- */
+
+.m43-error-summary {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  background: rgba(212,22,54,.06);
   border-left: 4px solid var(--m43-red);
-  background: rgba(215,22,53,.06);
-  border-radius: 8px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.m43-error-summary strong {
   font-weight: 600;
+  font-size: 15px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.m43-error-summary ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.m43-error-summary li {
+  margin-bottom: 6px;
+}
+
+/* --- 6B. Inline Field Error --- */
+
+.m43-inline-error {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--m43-red);
+  line-height: 1.4;
+}
+
+/* --- 6C. Field Error State --- */
+
+.wForm input.m43-field-error,
+.wForm textarea.m43-field-error,
+.wForm select.m43-field-error {
+  border-color: var(--m43-red) !important;
+  box-shadow: 0 0 0 3px rgba(240,47,78,.12) !important;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
 
 /* =========================================================
@@ -145,9 +185,13 @@
 
 .wForm .choices.vertical .oneChoice input[type="checkbox"],
 .wForm .choices.vertical .oneChoice input[type="radio"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
   position: absolute !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .wForm .choices.vertical .oneChoice label.postField {
@@ -166,6 +210,17 @@
   box-sizing: border-box !important;
 }
 
+/* --- Neutralize FormAssembly default faux checkbox rendering --- */
+.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux::before,
+.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux::after {
+  content: none !important;
+}
+
+.wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux {
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
 /* Faux checkbox alignment */
 .wForm .choices.vertical .oneChoice label.postField .input-checkbox-faux {
   width: 18px !important;
@@ -175,6 +230,29 @@
   background: #ffffff !important;
   flex-shrink: 0 !important;
   position: relative !important;
+}
+
+/* --- Radio: Circular Indicator Override --- */
+
+.wForm .choices.vertical .oneChoice input[type="radio"] + label.postField .input-checkbox-faux {
+  border-radius: 50% !important;
+}
+
+.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-checkbox-faux {
+  background: var(--m43-red) !important;
+  border-color: var(--m43-red) !important;
+}
+
+.wForm .choices.vertical .oneChoice input[type="radio"]:checked + label.postField .input-checkbox-faux::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 8px !important;
+  height: 8px !important;
+  background: #ffffff !important;
+  border-radius: 50% !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 /* Checked state */
@@ -240,5 +318,19 @@
 
   .wForm .oneField {
     margin-bottom: 24px;
+  }
+
+  /* --- Force inline grouped fields to stack on mobile --- */
+  .wForm .section.inline,
+  .wForm .inline.group,
+  .wForm .oneField.inline {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .wForm .section.inline .oneField,
+  .wForm .inline.group .oneField {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
