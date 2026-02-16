@@ -82,6 +82,7 @@
   background: var(--m43-fill-focus) !important;
   border-color: var(--m43-red) !important;
   box-shadow: 0 0 0 3px rgba(240,47,78,.12) !important;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 
 /* =========================================================
@@ -119,13 +120,16 @@
 /* --- 6A. Summary Block --- */
 
 .m43-error-summary {
-  margin-bottom: 24px;
-  padding: 18px 20px;
-  background: rgba(212,22,54,.06);
-  border-left: 4px solid var(--m43-red);
-  border-radius: 10px;
+  margin-bottom: 28px;
+  padding: 20px 22px 20px 26px;
+  background: rgba(212,22,54,.08);
+  border-left: 3px solid var(--m43-red);
+  border-radius: 12px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
+  box-shadow: 0 6px 18px rgba(0,0,0,.04);
+  animation: m43FadeIn .18s ease-out;
+  scroll-margin-top: 32px;
 }
 
 .m43-error-summary strong {
@@ -144,6 +148,33 @@
   margin-bottom: 6px;
 }
 
+/* --- 6A.1 Summary Enhancements --- */
+
+.m43-error-summary-heading {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: var(--m43-red);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m43-error-summary-heading::before {
+  content: "⚠";
+  font-size: 14px;
+}
+
+.m43-error-summary a {
+  color: var(--m43-red);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.m43-error-summary a:hover {
+  text-decoration: none;
+}
+
 /* --- 6B. Inline Field Error --- */
 
 .m43-inline-error {
@@ -151,8 +182,10 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--m43-red);
-  line-height: 1.4;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
 }
+
 
 /* --- 6C. Field Error State --- */
 
@@ -162,6 +195,30 @@
   border-color: var(--m43-red) !important;
   box-shadow: 0 0 0 3px rgba(240,47,78,.12) !important;
   transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+/* --- 6D. Field Container Error Highlight --- */
+
+.wForm .oneField.m43-field-container-error {
+  background: rgba(212,22,54,.04);
+  border-left: 3px solid var(--m43-red);
+  border-radius: 12px;
+  padding: 8px 12px 12px 12px;
+  transition: background .15s ease, border-color .15s ease, transform .12s ease;
+}
+
+/* --- Subtle shake on first invalid submit --- */
+@keyframes m43SubtleShake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+  100% { transform: translateX(0); }
+}
+
+.wForm .oneField.m43-shake {
+  animation: m43SubtleShake .25s ease;
 }
 
 /* =========================================================
@@ -190,6 +247,11 @@
   pointer-events: none !important;
   width: 0 !important;
   height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .wForm .choices .oneChoice label.postField {
@@ -285,6 +347,19 @@
   transform: rotate(45deg) !important;
 }
 
+/* -------------------------------------------------
+   HARD RESET – Kill FormAssembly pseudo controls
+   ------------------------------------------------- */
+
+.wForm .choices .oneChoice::before,
+.wForm .choices .oneChoice::after,
+.wForm .choices .oneChoice label.postField::before,
+.wForm .choices .oneChoice label.postField::after {
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
 /* =========================================================
    8. GUEST REPEATER GRID FIX (UNIVERSAL)
    ========================================================= */
@@ -344,5 +419,19 @@
   .wForm .inline.group .oneField {
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  /* Tighten error spacing on mobile */
+  .m43-error-summary {
+    margin-bottom: 20px;
+    padding: 16px 16px;
+  }
+
+  .wForm .oneField.m43-field-container-error {
+    padding: 8px 10px 10px 10px;
+  }
+
+  .m43-inline-error {
+    font-size: 12.5px;
   }
 }
