@@ -1,6 +1,24 @@
 /* =========================================================
+   DESIGN SYSTEM GOVERNANCE
+   ---------------------------------------------------------
+   This file defines the canonical Mission43 form UI system.
+   DO NOT:
+   - Introduce new colors outside design tokens
+   - Hardcode red / gray values outside :root
+   - Override token usage inline in components
+
+   All visual changes must flow through:
+   - :root design tokens
+   - Card system (Section 7A)
+   - Input system (Section 4)
+
+   This prevents brand drift across forms.
+   ========================================================= */
+
+/* =========================================================
    Mission43 Universal Form Core
-   Version: 1.0
+   Version: 1.2
+   Release: Stable Core – Mobile + UX Polish
    Hosted via Cloudflare Pages
    ========================================================= */
 
@@ -15,11 +33,35 @@
   --m43-text-primary: #171717;
   --m43-text-muted: #6F7372;
 
-  --m43-border: rgba(23,23,23,.15);
-  --m43-fill: #E6E4E1;
-  --m43-fill-focus: #EEEEEE;
+  --m43-border: rgba(23,23,23,.28);
+  --m43-fill: #F3F2F0;
+  --m43-fill-focus: #FFFFFF;
+  --m43-fill-complete: #F5F4F2;
   --m43-radius-input: 10px;
   --m43-radius-pill: 999px;
+}
+
+/* =========================================================
+   10. AUTOFILL NORMALIZATION (Chrome / Safari)
+   Removes browser blue autofill and keeps brand fill
+   ========================================================= */
+
+.wForm input:-webkit-autofill,
+.wForm input:-webkit-autofill:hover,
+.wForm input:-webkit-autofill:focus,
+.wForm textarea:-webkit-autofill,
+.wForm select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--m43-fill) inset !important;
+  box-shadow: 0 0 0 1000px var(--m43-fill) inset !important;
+  -webkit-text-fill-color: var(--m43-text-primary) !important;
+  border: 1px solid var(--m43-border) !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* Preserve focus ring even when autofilled */
+.wForm input:-webkit-autofill:focus {
+  border-color: var(--m43-red) !important;
+  box-shadow: 0 0 0 3px rgba(240,47,78,.12), 0 0 0 1000px var(--m43-fill) inset !important;
 }
 
 /* =========================================================
@@ -75,6 +117,7 @@
   box-sizing: border-box !important;
 }
 
+
 .wForm input:focus,
 .wForm textarea:focus,
 .wForm select:focus {
@@ -83,6 +126,14 @@
   border-color: var(--m43-red) !important;
   box-shadow: 0 0 0 3px rgba(240,47,78,.12) !important;
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+/* --- Completed Field State --- */
+.wForm input.m43-has-value,
+.wForm textarea.m43-has-value,
+.wForm select.m43-has-value {
+  background: var(--m43-fill-complete) !important;
+  transition: background .15s ease;
 }
 
 /* =========================================================
@@ -120,8 +171,8 @@
 /* --- 6A. Summary Block --- */
 
 .m43-error-summary {
-  margin-bottom: 28px;
-  padding: 20px 22px 20px 26px;
+  margin-bottom: 20px;
+  padding: 16px 16px;
   background: rgba(212,22,54,.08);
   border-left: 3px solid var(--m43-red);
   border-radius: 12px;
@@ -130,6 +181,12 @@
   box-shadow: 0 6px 18px rgba(0,0,0,.04);
   animation: m43FadeIn .18s ease-out;
   scroll-margin-top: 32px;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.m43-error-summary.m43-summary-resolving {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .m43-error-summary strong {
@@ -184,6 +241,17 @@
   color: var(--m43-red);
   line-height: 1.45;
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.m43-inline-error::before {
+  content: "⚠";
+  font-size: 12px;
+  line-height: 1.2;
+  margin-top: 2px;
+  opacity: 0.9;
 }
 
 
@@ -260,9 +328,12 @@
   gap: 14px !important;
   width: 100% !important;
   padding: 14px 16px !important;
-  background: var(--m43-fill) !important;
+  background: #FFFFFF !important;
   border-radius: 10px !important;
-  border: 1px solid transparent !important;
+  /* Card border uses --m43-border token.
+     Do not hardcode border colors here.
+     Selected state must remain red-only for clarity. */
+  border: 1px solid var(--m43-border) !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   cursor: pointer !important;
@@ -325,7 +396,7 @@
 
 /* Checked state */
 .wForm .choices .oneChoice input:checked + label.postField {
-  background: rgba(240,47,78,.08) !important;
+  background: rgba(212,22,54,.06) !important;
   border-color: var(--m43-red) !important;
 }
 
@@ -345,6 +416,17 @@
   border: solid #ffffff !important;
   border-width: 0 2px 2px 0 !important;
   transform: rotate(45deg) !important;
+}
+
+@media (min-width: 769px) {
+
+  .wForm .choices .oneChoice label.postField:hover {
+    border-color: rgba(23,23,23,.35) !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,.06) !important;
+    transform: translateY(-1px);
+    transition: border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+  }
+
 }
 
 /* -------------------------------------------------
@@ -388,6 +470,24 @@
 
 @media (max-width: 768px) {
 
+  /* =========================================================
+     TABLE COLUMN LAYOUT OVERRIDE (FormAssembly default 2-col layout)
+     Forces columnLayout tables to stack on mobile
+     ========================================================= */
+
+  .wForm table.columnLayout,
+  .wForm table.columnLayout tbody,
+  .wForm table.columnLayout tr {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .wForm table.columnLayout td {
+    display: block !important;
+    width: 100% !important;
+    padding-right: 0 !important;
+  }
+
   .wFormContainer {
     padding: 0 16px;
   }
@@ -398,7 +498,7 @@
   }
 
   .wForm .oneField {
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
 
   /* --- Force inline grouped fields to stack on mobile --- */
@@ -421,10 +521,72 @@
     max-width: 100% !important;
   }
 
+  /* =========================================================
+     UNIVERSAL STACKING SAFETY (Mobile)
+     Ensures all inline / grouped / column layouts stack
+     ========================================================= */
+
+  /* Kill any grid or flex multi-column layouts (safer version) */
+  .wForm .section:not(.offstate):not(.wf-acl-hidden),
+  .wForm .section.group:not(.offstate):not(.wf-acl-hidden),
+  .wForm .section.inline.group:not(.offstate):not(.wf-acl-hidden),
+  .wForm .removeable.section.inline.group:not(.offstate):not(.wf-acl-hidden) {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Preserve FormAssembly hidden state */
+  .wForm .offstate,
+  .wForm .wf-acl-hidden {
+    display: none !important;
+  }
+
+  /* --- HARD MOBILE STACK OVERRIDE (FormAssembly floats + inline fields) --- */
+
+  /* Force all inline oneField blocks to stack */
+  .wForm .oneField.inline,
+  .wForm .inline .oneField,
+  .wForm .section.inline .oneField {
+    display: block !important;
+    float: none !important;
+    clear: both !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Kill any float-based column behavior from themes */
+  .wForm .oneField {
+    float: none !important;
+  }
+
+  /* Ensure parent containers cannot constrain width */
+  .wForm .section,
+  .wForm .section.group,
+  .wForm .section.inline {
+    width: 100% !important;
+  }
+
+  /* Force all oneField blocks to full width */
+  .wForm .oneField {
+    width: 100% !important;
+    max-width: 100% !important;
+    float: none !important;
+  }
+
+  /* Ensure input wrappers cannot sit side-by-side */
+  .wForm .oneField .inputWrapper {
+    width: 100% !important;
+  }
+
+  /* Remove left borders that feel heavy on mobile */
+  .wForm .oneField.m43-field-container-error {
+    border-left-width: 2px;
+  }
+
   /* Tighten error spacing on mobile */
   .m43-error-summary {
-    margin-bottom: 20px;
-    padding: 16px 16px;
+    margin-bottom: 18px;
+    padding: 14px 14px;
   }
 
   .wForm .oneField.m43-field-container-error {
@@ -433,5 +595,10 @@
 
   .m43-inline-error {
     font-size: 12.5px;
+  }
+
+  /* --- Improve mobile tap targets for choices --- */
+  .wForm .choices .oneChoice label.postField {
+    padding: 16px 18px !important;
   }
 }

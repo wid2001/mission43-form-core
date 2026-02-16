@@ -1,4 +1,63 @@
+// =========================================================
+// M43 Core v2.0
+// Enterprise Hybrid Validation Engine
+// Status: Stable
+// Locked: 2026-02
+// =========================================================
 ;(function M43CoreStable() {
+  // ---------------------------------------------------------
+  // DEBUG MODE (optional per-form)
+  // Enable by setting: window.M43_DEBUG = true
+  // ---------------------------------------------------------
+  const DEBUG = !!window.M43_DEBUG
+
+  function debugLog() {
+    if (!DEBUG) return
+    console.log.apply(console, ['[M43]', ...arguments])
+  }
+  // =========================================================
+  // M43 HYBRID CONFIG
+  // - Internal defaults
+  // - Optional per-form override via window.M43_FORM_CONFIG
+  // =========================================================
+  const DEFAULT_CONFIG = {
+    selectors: {
+      form: 'form',
+      email: 'input.calc-email',
+      confirmEmail: 'input.calc-confirmEmail',
+      phone: 'input.calc-phone',
+    },
+    messages: {
+      emailRequired: 'Email is required.',
+      emailInvalid: 'Enter a valid email address.',
+      confirmRequired: 'Please confirm your email.',
+      emailMismatch: 'Email addresses must match.',
+      phoneRequired: 'Phone number is required.',
+      phoneInvalid: 'Enter a valid 10-digit phone number.',
+    },
+  }
+
+  function mergeDeep(base, override) {
+    const out = Array.isArray(base) ? base.slice() : { ...base }
+    if (!override || typeof override !== 'object') return out
+    Object.keys(override).forEach((k) => {
+      const bv = base ? base[k] : undefined
+      const ov = override[k]
+      if (ov && typeof ov === 'object' && !Array.isArray(ov)) {
+        out[k] = mergeDeep(bv || {}, ov)
+      } else {
+        out[k] = ov
+      }
+    })
+    return out
+  }
+
+  function getConfig() {
+    // Optional external override:
+    // window.M43_FORM_CONFIG = { selectors: {...}, messages: {...} }
+    const override = window.M43_FORM_CONFIG
+    return mergeDeep(DEFAULT_CONFIG, override)
+  }
   function clearInlineErrors(scope) {
     // Remove inline error messages
     scope.querySelectorAll('.m43-inline-error').forEach((e) => e.remove())
@@ -7,9 +66,32 @@
     scope.querySelectorAll('.oneField.m43-field-container-error')
       .forEach((el) => el.classList.remove('m43-field-container-error'))
 
+    // Animate summary collapse if present
+    const summary = scope.querySelector('.m43-error-summary')
+    if (summary) {
+      summary.classList.add('m43-summary-resolving')
+      setTimeout(() => {
+        summary.remove()
+      }, 300)
+    }
+
     scope.querySelectorAll('[aria-invalid="true"]').forEach((el) => {
       el.removeAttribute('aria-invalid')
-      el.removeAttribute('aria-describedby')
+
+      const describedBy = el.getAttribute('aria-describedby')
+      if (!describedBy) return
+
+      const remaining = describedBy
+        .split(' ')
+        .filter((id) => !id.endsWith('-error'))
+        .join(' ')
+        .trim()
+
+      if (remaining) {
+        el.setAttribute('aria-describedby', remaining)
+      } else {
+        el.removeAttribute('aria-describedby')
+      }
     })
   }
 
@@ -31,14 +113,22 @@
     // Accessibility wiring
     if (input) {
       input.setAttribute('aria-invalid', 'true')
-      input.setAttribute('aria-describedby', errorId)
+
+      const existing = input.getAttribute('aria-describedby')
+      if (existing) {
+        if (!existing.split(' ').includes(errorId)) {
+          input.setAttribute('aria-describedby', existing + ' ' + errorId)
+        }
+      } else {
+        input.setAttribute('aria-describedby', errorId)
+      }
     }
 
     container.appendChild(div)
   }
 
   function renderSummary(form, messages) {
-    if (!form || !messages.length) return
+    if (!form || !messages || !messages.length) return
 
     const existing = form.querySelector('.m43-error-summary')
     if (existing) existing.remove()
@@ -55,7 +145,10 @@
 
     const ul = document.createElement('ul')
 
-    messages.forEach((msg) => {
+    messages.forEach((item) => {
+      const msg = typeof item === 'string' ? item : item.message
+      const fieldId = typeof item === 'string' ? null : item.fieldId
+
       const li = document.createElement('li')
       const link = document.createElement('a')
       link.href = '#'
@@ -63,10 +156,20 @@
 
       link.addEventListener('click', function (e) {
         e.preventDefault()
-        const firstErrorField = form.querySelector('[aria-invalid="true"]')
-        if (firstErrorField) {
-          firstErrorField.focus({ preventScroll: false })
-          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+        let targetField = null
+
+        if (fieldId) {
+          targetField = form.querySelector('#' + CSS.escape(fieldId))
+        }
+
+        if (!targetField) {
+          targetField = form.querySelector('[aria-invalid="true"]')
+        }
+
+        if (targetField) {
+          targetField.focus({ preventScroll: false })
+          targetField.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
       })
 
@@ -90,18 +193,55 @@
     return (value || '').replace(/\D/g, '')
   }
 
+  // =========================================================
+  // VALUE STATE (UI POLISH)
+  // Adds .m43-has-value to inputs/selects/textarea when non-empty
+  // - Initializes on load (supports autofill)
+  // - Updates on input/change/blur
+  // =========================================================
+  function updateHasValueClass(el) {
+    if (!el || !el.classList) return
+
+    // Skip buttons, radios, checkboxes, hidden fields
+    const type = (el.getAttribute && el.getAttribute('type')) || ''
+    if (type === 'button' || type === 'submit' || type === 'reset') return
+    if (type === 'radio' || type === 'checkbox' || type === 'hidden') return
+
+    const v = (el.value || '').toString().trim()
+    el.classList.toggle('m43-has-value', v.length > 0)
+  }
+
+  function wireHasValueState(form) {
+    if (!form) return
+
+    const els = form.querySelectorAll(
+      'input[type="text"], input[type="email"], input[type="tel"], input[type="password"], textarea, select'
+    )
+
+    els.forEach((el) => {
+      // init (covers prefilled + browser autofill)
+      updateHasValueClass(el)
+
+      // keep fresh
+      el.addEventListener('input', () => updateHasValueClass(el))
+      el.addEventListener('change', () => updateHasValueClass(el))
+      el.addEventListener('blur', () => updateHasValueClass(el), true)
+    })
+  }
+
   function validateForm(form) {
     let isValid = true
 
     clearInlineErrors(form)
-    const existingSummary = form.querySelector('.m43-error-summary')
-    if (existingSummary) existingSummary.remove()
 
     const summaryMessages = []
 
-    const email = form.querySelector('input.calc-email')
-    const confirm = form.querySelector('input.calc-confirmEmail')
-    const phone = form.querySelector('input.calc-phone')
+    const cfg = getConfig()
+    debugLog('validateForm called')
+
+    const email = form.querySelector(cfg.selectors.email)
+    const confirm = form.querySelector(cfg.selectors.confirmEmail)
+    const phone = form.querySelector(cfg.selectors.phone)
 
     // ---- EMAIL VALIDATION ----
     if (email) {
@@ -109,12 +249,12 @@
       const value = (email.value || '').trim()
 
       if (!value) {
-        renderError(emailContainer, 'Email is required.')
-        summaryMessages.push('Email is required.')
+        renderError(emailContainer, cfg.messages.emailRequired)
+        summaryMessages.push({ message: cfg.messages.emailRequired, fieldId: email.id })
         isValid = false
       } else if (!isValidEmailFormat(value)) {
-        renderError(emailContainer, 'Enter a valid email address.')
-        summaryMessages.push('Enter a valid email address.')
+        renderError(emailContainer, cfg.messages.emailInvalid)
+        summaryMessages.push({ message: cfg.messages.emailInvalid, fieldId: email.id })
         isValid = false
       }
     }
@@ -125,12 +265,12 @@
       const v2 = (confirm.value || '').trim().toLowerCase()
 
       if (!v2) {
-        renderError(confirmContainer, 'Please confirm your email.')
-        summaryMessages.push('Please confirm your email.')
+        renderError(confirmContainer, cfg.messages.confirmRequired)
+        summaryMessages.push({ message: cfg.messages.confirmRequired, fieldId: confirm.id })
         isValid = false
       } else if (v1 && v2 && v1 !== v2) {
-        renderError(confirmContainer, 'Email addresses must match.')
-        summaryMessages.push('Email addresses must match.')
+        renderError(confirmContainer, cfg.messages.emailMismatch)
+        summaryMessages.push({ message: cfg.messages.emailMismatch, fieldId: confirm.id })
         isValid = false
       }
     }
@@ -141,12 +281,12 @@
       const digits = digitsOnly(phone.value)
 
       if (!digits) {
-        renderError(phoneContainer, 'Phone number is required.')
-        summaryMessages.push('Phone number is required.')
+        renderError(phoneContainer, cfg.messages.phoneRequired)
+        summaryMessages.push({ message: cfg.messages.phoneRequired, fieldId: phone.id })
         isValid = false
       } else if (digits.length !== 10) {
-        renderError(phoneContainer, 'Enter a valid 10-digit phone number.')
-        summaryMessages.push('Enter a valid 10-digit phone number.')
+        renderError(phoneContainer, cfg.messages.phoneInvalid)
+        summaryMessages.push({ message: cfg.messages.phoneInvalid, fieldId: phone.id })
         isValid = false
       }
     }
@@ -181,8 +321,9 @@
     const form = input.closest('form')
     if (!form) return true
 
-    const email = form.querySelector('input.calc-email')
-    const confirm = form.querySelector('input.calc-confirmEmail')
+    const cfg = getConfig()
+    const email = form.querySelector(cfg.selectors.email)
+    const confirm = form.querySelector(cfg.selectors.confirmEmail)
 
     const container = input.closest('.oneField')
     if (!container) return true
@@ -197,7 +338,7 @@
       const value = (input.value || '').trim()
 
       if (value && !isValidEmailFormat(value)) {
-        renderError(container, 'Enter a valid email address.')
+        renderError(container, cfg.messages.emailInvalid)
         isValid = false
       }
 
@@ -210,7 +351,7 @@
         const v2 = (confirm.value || '').trim().toLowerCase()
 
         if (v2 && v1 !== v2) {
-          renderError(confirmContainer, 'Email addresses must match.')
+          renderError(confirmContainer, cfg.messages.emailMismatch)
         }
       }
     }
@@ -221,7 +362,7 @@
       const v2 = (input.value || '').trim().toLowerCase()
 
       if (v2 && v1 && v1 !== v2) {
-        renderError(container, 'Email addresses must match.')
+        renderError(container, cfg.messages.emailMismatch)
         isValid = false
       }
     }
@@ -231,7 +372,7 @@
       const digits = digitsOnly(input.value)
 
       if (digits && digits.length !== 10) {
-        renderError(container, 'Enter a valid 10-digit phone number.')
+        renderError(container, cfg.messages.phoneInvalid)
         isValid = false
       }
     }
@@ -244,6 +385,7 @@
     if (!form || form.tagName !== 'FORM') return
 
     const valid = validateForm(form)
+    debugLog('submit validation result:', valid)
 
     if (!valid) {
       event.preventDefault()
@@ -255,9 +397,18 @@
 
   document.addEventListener('submit', handleSubmit, true)
 
+  // Initialize value-state styling for all forms on the page
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll(getConfig().selectors.form).forEach((f) => {
+      wireHasValueState(f)
+    })
+  })
+
   document.addEventListener('input', function (event) {
     const target = event.target
     if (!target || target.tagName !== 'INPUT') return
+
+    updateHasValueClass(target)
 
     if (
       target.classList.contains('calc-email') ||
@@ -271,6 +422,8 @@
   document.addEventListener('blur', function (event) {
     const target = event.target
     if (!target || target.tagName !== 'INPUT') return
+
+    updateHasValueClass(target)
 
     if (
       target.classList.contains('calc-email') ||
@@ -293,6 +446,7 @@
     if (!form) return
 
     const valid = validateForm(form)
+    debugLog('nav validation result:', valid)
 
     if (!valid) {
       event.preventDefault()
@@ -319,7 +473,8 @@
     const originalRun = wFORMS.behaviors.paging.run
 
     function wrappedPagingRun() {
-      const form = document.querySelector('form')
+      const cfg = getConfig()
+      const form = document.querySelector(cfg.selectors.form)
       if (form && !validateForm(form)) {
         return false
       }
