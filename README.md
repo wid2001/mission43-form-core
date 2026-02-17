@@ -1131,7 +1131,37 @@ Auto-updates when:
 • Last name changes
 • Phone changes
 
-Identifier field should be hidden or read-only.
+
+---
+
+## 📞 Salesforce Phone Normalization Behavior
+
+Mission43 Form Core enforces **canonical phone submission** to guarantee Salesforce lookup parity.
+
+Behavior:
+
+• Users see a masked format: `(###) ###-####`
+• Before submit, the value is normalized to **digits-only**
+• Example: `(208) 954-3891` → `2089543891`
+
+Why this matters:
+
+Salesforce Phone fields visually format numbers based on locale, but internally store digits.
+SOQL equality comparisons succeed most reliably when matching against digits-only values.
+
+The core therefore:
+
+• Preserves masked UX for users
+• Submits canonical digits-only value
+• Ensures FormAssembly connector lookups succeed
+• Prevents mismatches caused by parentheses or dashes
+
+No Salesforce schema changes are required.
+No additional normalization Flow or Apex logic is required.
+
+This behavior is enforced during submit capture phase and does not interfere with validation or navigation gating.
+
+---
 
 ---
 

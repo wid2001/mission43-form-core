@@ -627,6 +627,22 @@ const ENABLE_IDENTIFIER =
     return isValid
   }
 
+  // =========================================================
+  // EARLY PHONE NORMALIZATION (Architectural)
+  // Ensures DOM value is canonical digits BEFORE any FA serialization
+  // Safe to call multiple times (idempotent)
+  // =========================================================
+  function normalizePhoneForSubmission(form) {
+    if (!form) return
+    const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
+    if (!phone) return
+
+    const digits = getPhoneDigits(phone)
+    if (digits && phone.value !== digits) {
+      phone.value = digits
+    }
+  }
+
   function handleSubmit(event) {
     const __profile = profileStart('handleSubmit')
 
@@ -637,6 +653,7 @@ const ENABLE_IDENTIFIER =
     }
 
     const valid = validateForm(form)
+    normalizePhoneForSubmission(form)
     debugLog('submit validation result:', valid)
 
     if (!valid) {
@@ -645,18 +662,6 @@ const ENABLE_IDENTIFIER =
       event.stopImmediatePropagation()
       profileEnd(__profile)
       return false
-    }
-
-    // ---------------------------------------------------------
-    // Normalize phone to digits-only before submission
-    // Ensures Salesforce connector lookup parity (xxx-xxx-xxxx → xxxxxxxxxx)
-    // ---------------------------------------------------------
-    const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
-    if (phone) {
-      const digits = getPhoneDigits(phone)
-      if (digits) {
-        phone.value = digits
-      }
     }
 
     profileEnd(__profile)
@@ -740,6 +745,8 @@ const ENABLE_IDENTIFIER =
       return
     }
 
+    normalizePhoneForSubmission(form)
+
     const valid = validateForm(form)
     debugLog('nav validation result:', valid)
 
@@ -772,6 +779,7 @@ const ENABLE_IDENTIFIER =
     function wrappedPagingRun() {
       const __profile = profileStart('wrappedPagingRun')
       const form = document.querySelector(RESOLVED_CONFIG.selectors.form)
+      if (form) normalizePhoneForSubmission(form)
       if (form && !validateForm(form)) {
         profileEnd(__profile)
         return false

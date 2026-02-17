@@ -6,6 +6,30 @@ This project adheres to Semantic Versioning (SemVer).
 
 ---
 
+---
+
+## [2.1.1] - 2026-02-16 (Salesforce Parity Patch)
+
+### Added
+- Early phone normalization before submit (digits-only canonicalization)
+- Submit-phase mutation to ensure Salesforce connector lookup parity
+- Architectural alignment between masked UX and canonical submission value
+
+### Documentation
+- Added **"Salesforce Phone Normalization Behavior"** section to README
+  - Explains masked UX vs canonical digits submission
+  - Clarifies Salesforce Phone field storage + SOQL equality behavior
+  - Documents connector lookup parity guarantees
+  - Confirms no additional Salesforce Flow/Apex normalization required
+
+### Notes
+- No validation, navigation gating, or identifier logic changes.
+- No breaking changes.
+- Fully backward compatible.
+- Patch release under SemVer (non-breaking behavioral correction).
+
+---
+
 ## [2.1.0] - 2026-02-16 (Production Release — JS Engine)
 
 ### Added
