@@ -1,295 +1,789 @@
-/**
- * Mission43 Core Behavior Layer
- * Phone Masking
- * Email Validation + Confirm Matching
- * Navigation Gate Enforcement
- * Uses IMask 7.6.1 (UMD build)
- */
+// =========================================================
+// M43 Core v2.0
+// Enterprise Hybrid Validation Engine
+// Status: Stable
+// Locked: 2026-02
+// =========================================================
+;(function M43CoreStable() {
+  // ---------------------------------------------------------
+  // DEBUG MODE (optional per-form)
+  // Enable by setting: window.M43_DEBUG = true
+  // ---------------------------------------------------------
+  const DEBUG = !!window.M43_DEBUG
 
-(function M43Core() {
+  function debugLog() {
+    if (!DEBUG) return
+    console.log.apply(console, ['[M43]', ...arguments])
+  }
 
-  const IMASK_CDN =
-    "https://cdn.jsdelivr.net/npm/imask@7.6.1/dist/imask.min.js";
+    // ---------------------------------------------------------
+    // MICRO PROFILING (lightweight, debug-only)
+    // Enable via: window.M43_PROFILE = true
+    // ---------------------------------------------------------
+    function isProfileEnabled() {
+      return !!window.M43_PROFILE
+    }
 
-  const PHONE_SELECTOR =
-    'input[autocomplete="tel"]';
+    function profileStart(label) {
+      if (!isProfileEnabled() || !window.performance || !performance.now) return null
+      return { label, start: performance.now() }
+    }
 
-  const EMAIL_SELECTOR =
-    'input[autocomplete="email"]';
+    function profileEnd(token) {
+      if (!isProfileEnabled() || !token || !window.performance || !performance.now) return
+      const duration = performance.now() - token.start
+      console.log('[M43 PROFILE]', token.label + ':', duration.toFixed(2) + 'ms')
+    }
+
+  // =========================================================
+  // PHONE MASKING (IMask)
+  // - Uses IMask if available, otherwise loads from CDN
+  // - Applies to inputs matching cfg.selectors.phone (default: input.calc-phone)
+  // - Idempotent: never double-applies
+  // =========================================================
+  const IMASK_CDN = 'https://cdn.jsdelivr.net/npm/imask@7.6.1/dist/imask.min.js'
 
   const MASK_CONFIG = {
-    mask: "(000) 000-0000",
+    mask: '(000) 000-0000',
     lazy: true,
-    placeholderChar: "_",
-  };
+    placeholderChar: '_',
+  }
+
+  const __m43MaskLoad = {
+    promise: null,
+  }
+
+  function loadIMaskOnce() {
+    if (window.IMask) return Promise.resolve(window.IMask)
+    if (__m43MaskLoad.promise) return __m43MaskLoad.promise
+
+    __m43MaskLoad.promise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-m43-imask]')
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.IMask))
+        existing.addEventListener('error', reject)
+        return
+      }
+
+      const s = document.createElement('script')
+      s.src = IMASK_CDN
+      s.async = true
+      s.defer = true
+      s.setAttribute('data-m43-imask', 'true')
+      s.onload = () => resolve(window.IMask)
+      s.onerror = reject
+      document.head.appendChild(s)
+    })
+
+    return __m43MaskLoad.promise
+  }
+
+  function applyPhoneMaskToInput(input) {
+    if (!input || input.dataset.m43MaskApplied === 'true') return
+
+    // Do not mask disabled/hidden inputs
+    if (input.disabled) return
+    const type = (input.getAttribute('type') || '').toLowerCase()
+    if (type && type !== 'tel' && type !== 'text') return
+
+    loadIMaskOnce()
+      .then((IMask) => {
+        if (!IMask || input.dataset.m43MaskApplied === 'true') return
+
+        // Memory-safety: if a mask instance is already attached (unexpected), destroy it
+        try {
+        if (input.__m43IMask && typeof input.__m43IMask.destroy === 'function') {
+        input.__m43IMask.destroy()
+        }
+        } catch (_) {}
+        input.__m43IMask = null
+
+        // Apply IMask
+        const mask = IMask(input, MASK_CONFIG)
+        input.__m43IMask = mask
+        input.dataset.m43MaskApplied = 'true'
+
+        // Keep UI polish + validation in sync with mask changes
+        mask.on('accept', () => {
+          updateHasValueClass(input)
+          if (input.classList.contains('calc-phone')) {
+            validateField(input)
+          }
+        })
+        mask.on('complete', () => {
+          updateHasValueClass(input)
+          if (input.classList.contains('calc-phone')) {
+            validateField(input)
+          }
+        })
+
+        // Initial sync (covers autofill / prefilled)
+        try {
+          mask.updateValue()
+        } catch (_) {}
+        updateHasValueClass(input)
+      })
+      .catch(() => {
+        // Mask load failed; validation will still work
+      })
+  }
+
+  function initPhoneMaskForForm(form) {
+    if (!form) return
+    const phoneInputs = form.querySelectorAll(RESOLVED_CONFIG.selectors.phone)
+    phoneInputs.forEach((inp) => applyPhoneMaskToInput(inp))
+  }
+  // =========================================================
+  // M43 HYBRID CONFIG
+  // - Internal defaults
+  // - Optional per-form override via window.M43_FORM_CONFIG
+  // =========================================================
+  const DEFAULT_CONFIG = {
+    selectors: {
+      form: 'form',
+      email: 'input.calc-email',
+      confirmEmail: 'input.calc-confirmEmail',
+      phone: 'input.calc-phone',
+      contactLookupIdentifier: 'input.calc-contactLookupIdentifier',
+      formName: 'input.calc-formName',
+      formTitle: '.wFormTitle',
+    },
+    messages: {
+      emailRequired: 'Email is required.',
+      emailInvalid: 'Enter a valid email address.',
+      confirmRequired: 'Please confirm your email.',
+      emailMismatch: 'Email addresses must match.',
+      phoneRequired: 'Phone number is required.',
+      phoneInvalid: 'Enter a valid 10-digit phone number.',
+    },
+  }
+
+  function mergeDeep(base, override) {
+    const out = Array.isArray(base) ? base.slice() : { ...base }
+    if (!override || typeof override !== 'object') return out
+    Object.keys(override).forEach((k) => {
+      const bv = base ? base[k] : undefined
+      const ov = override[k]
+      if (ov && typeof ov === 'object' && !Array.isArray(ov)) {
+        out[k] = mergeDeep(bv || {}, ov)
+      } else {
+        out[k] = ov
+      }
+    })
+    return out
+  }
+
+  function getConfig() {
+    // Optional external override:
+    // window.M43_FORM_CONFIG = { selectors: {...}, messages: {...} }
+    const override = window.M43_FORM_CONFIG
+    return mergeDeep(DEFAULT_CONFIG, override)
+  }
+  // ---------------------------------------------------------
+// RESOLVED CONFIG (single-form per page assumption)
+// Prevent repeated deep merges during runtime
+// ---------------------------------------------------------
+const RESOLVED_CONFIG = getConfig()
+
+  function clearInlineErrors(scope) {
+    // Remove inline error messages
+    scope.querySelectorAll('.m43-inline-error').forEach((e) => e.remove())
+
+    // Remove container-level error styling
+    scope.querySelectorAll('.oneField.m43-field-container-error')
+      .forEach((el) => el.classList.remove('m43-field-container-error'))
+
+    // Animate summary collapse if present
+    const summary = scope.querySelector('.m43-error-summary')
+    if (summary) {
+      summary.classList.add('m43-summary-resolving')
+      setTimeout(() => {
+        summary.remove()
+      }, 300)
+    }
+
+    scope.querySelectorAll('[aria-invalid="true"]').forEach((el) => {
+      el.removeAttribute('aria-invalid')
+
+      const describedBy = el.getAttribute('aria-describedby')
+      if (!describedBy) return
+
+      const remaining = describedBy
+        .split(' ')
+        .filter((id) => !id.endsWith('-error'))
+        .join(' ')
+        .trim()
+
+      if (remaining) {
+        el.setAttribute('aria-describedby', remaining)
+      } else {
+        el.removeAttribute('aria-describedby')
+      }
+    })
+  }
+
+  function renderError(container, message) {
+    if (!container) return
+
+    container.classList.add('m43-field-container-error')
+
+    const input = container.querySelector('input, textarea, select')
+
+    const div = document.createElement('div')
+    div.className = 'm43-inline-error'
+    div.textContent = message
+
+    // Generate stable error id
+    const errorId = (input && input.id ? input.id : 'm43') + '-error'
+    div.id = errorId
+
+    // Accessibility wiring
+    if (input) {
+      input.setAttribute('aria-invalid', 'true')
+
+      const existing = input.getAttribute('aria-describedby')
+      if (existing) {
+        if (!existing.split(' ').includes(errorId)) {
+          input.setAttribute('aria-describedby', existing + ' ' + errorId)
+        }
+      } else {
+        input.setAttribute('aria-describedby', errorId)
+      }
+    }
+
+    container.appendChild(div)
+  }
+
+  function renderSummary(form, messages) {
+    if (!form || !messages || !messages.length) return
+
+    const existing = form.querySelector('.m43-error-summary')
+    if (existing) existing.remove()
+
+    const summary = document.createElement('div')
+    summary.className = 'm43-error-summary'
+    summary.setAttribute('role', 'alert')
+    summary.setAttribute('aria-live', 'assertive')
+
+    const heading = document.createElement('div')
+    heading.className = 'm43-error-summary-heading'
+    heading.textContent = 'Please correct the following:'
+    summary.appendChild(heading)
+
+    const ul = document.createElement('ul')
+
+    messages.forEach((item) => {
+      const msg = typeof item === 'string' ? item : item.message
+      const fieldId = typeof item === 'string' ? null : item.fieldId
+
+      const li = document.createElement('li')
+      const link = document.createElement('a')
+      link.href = '#'
+      link.textContent = msg
+
+      link.addEventListener('click', function (e) {
+        e.preventDefault()
+
+        let targetField = null
+
+        if (fieldId) {
+          targetField = form.querySelector('#' + CSS.escape(fieldId))
+        }
+
+        if (!targetField) {
+          targetField = form.querySelector('[aria-invalid="true"]')
+        }
+
+        if (targetField) {
+          targetField.focus({ preventScroll: false })
+          targetField.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      })
+
+      li.appendChild(link)
+      ul.appendChild(li)
+    })
+
+    summary.appendChild(ul)
+
+    form.prepend(summary)
+
+    // Scroll to summary
+    summary.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function isValidEmailFormat(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  }
 
   function digitsOnly(value) {
-    return (value || "").replace(/\D/g, "");
+    return (value || '').replace(/\D/g, '')
   }
 
-  function loadIMask() {
-    return new Promise((resolve, reject) => {
-      if (window.IMask) {
-        resolve(window.IMask);
-        return;
-      }
+  function getPhoneDigits(input) {
+    if (!input) return ''
+    // Prefer IMask unmasked value when available (source of truth)
+    const m = input.__m43IMask
+    if (m && typeof m.unmaskedValue === 'string') return m.unmaskedValue
+    return digitsOnly(input.value)
+  }
+// NOTE: Do NOT return early here.
+// ENABLE_IDENTIFIER must only gate identifier logic, not the entire M43 core.
 
-      const script = document.createElement("script");
-      script.src = IMASK_CDN;
-      script.onload = () => resolve(window.IMask);
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
+  // Feature flag (can be overridden per form)
+// window.M43_ENABLE_IDENTIFIER = false to disable
+const ENABLE_IDENTIFIER =
+  typeof window.M43_ENABLE_IDENTIFIER === 'boolean'
+    ? window.M43_ENABLE_IDENTIFIER
+    : true
+
+  // =========================================================
+  // CONTACT LOOKUP IDENTIFIER (Salesforce Parity)
+  // Mirrors NVT_Mission43IdentifierService.generate(Contact)
+  // =========================================================
+  const DIACRITIC_MAP = {
+    'à':'a','á':'a','â':'a','ã':'a','ä':'a','å':'a','ā':'a','ă':'a','ą':'a',
+    'æ':'ae','ç':'c','ć':'c','ĉ':'c','ċ':'c','č':'c',
+    'ď':'d','đ':'d',
+    'è':'e','é':'e','ê':'e','ë':'e','ē':'e','ĕ':'e','ė':'e','ę':'e','ě':'e',
+    'ğ':'g','ġ':'g','ģ':'g','ĥ':'h',
+    'ì':'i','í':'i','î':'i','ï':'i','ĩ':'i','ī':'i','ĭ':'i','į':'i','ı':'i',
+    'ñ':'n','ń':'n','ņ':'n','ň':'n',
+    'ò':'o','ó':'o','ô':'o','õ':'o','ö':'o','ø':'o','ō':'o','ŏ':'o','ő':'o',
+    'œ':'oe','ŕ':'r','ŗ':'r','ř':'r',
+    'ś':'s','ŝ':'s','ş':'s','š':'s','ß':'ss',
+    'ţ':'t','ť':'t','ț':'t',
+    'ù':'u','ú':'u','û':'u','ü':'u','ũ':'u','ū':'u','ŭ':'u','ů':'u','ű':'u','ų':'u',
+    'ý':'y','ÿ':'y',
+    'ź':'z','ż':'z','ž':'z',
+    'þ':'th'
   }
 
-  function applyPhoneMask(IMaskLib, input) {
-    if (input.dataset.m43MaskApplied) return;
-
-    const maskInstance = IMaskLib(input, MASK_CONFIG);
-    input._m43Mask = maskInstance;
-    input.dataset.m43MaskApplied = "true";
+  function stripDiacritics(value) {
+    let result = ''
+    for (let i = 0; i < value.length; i++) {
+      const ch = value.charAt(i)
+      result += DIACRITIC_MAP[ch] || ch
+    }
+    return result
   }
 
-  function validatePhones() {
-    let valid = true;
-    const phones = document.querySelectorAll(PHONE_SELECTOR);
-
-    phones.forEach((input) => {
-      delete input.dataset.m43Error;
-
-      const digits = input._m43Mask
-        ? input._m43Mask.unmaskedValue
-        : digitsOnly(input.value);
-      const isRequired =
-        input.classList.contains("required") ||
-        input.getAttribute("aria-required") === "true";
-
-      if (
-        (isRequired && !digits.length) ||
-        (digits.length > 0 && digits.length !== 10)
-      ) {
-        input.dataset.m43Error = "Please enter a valid 10-digit phone number.";
-        valid = false;
-      }
-    });
-
-    return valid;
+  function normalizeName(value) {
+    if (!value) return null
+    const normalized = stripDiacritics(value.trim().toLowerCase())
+    return normalized.length ? normalized : null
   }
 
-  function validateEmailFormat(input) {
-    delete input.dataset.m43Error;
+  function normalizeLastName(value) {
+    const normalized = normalizeName(value)
+    if (!normalized) return null
+    const cleaned = normalized.replace(/[^a-z0-9]/g, '')
+    return cleaned.length ? cleaned : null
+  }
 
-    const value = input.value.trim();
-    const isRequired =
-      input.classList.contains("required") ||
-      input.getAttribute("aria-required") === "true";
+  function normalizePhoneForIdentifier(input) {
+    const digits = getPhoneDigits(input)
+    return digits && digits.length ? digits : null
+  }
 
-    if (isRequired && !value) {
-      input.dataset.m43Error = "This field is required.";
-      return false;
+  function buildContactLookupIdentifier(form) {
+    if (!form) return
+
+    const first = form.querySelector('input.calc-fname')
+      const last = form.querySelector('input.calc-lname')
+      const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
+      const lookup = form.querySelector(RESOLVED_CONFIG.selectors.contactLookupIdentifier)
+
+    if (!first || !last || !phone || !lookup) return
+
+    // Ensure lookup field is readonly (prevents user tampering, still submits)
+    if (!lookup.hasAttribute('readonly')) {
+      lookup.setAttribute('readonly', 'readonly')
     }
 
-    if (value) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        input.dataset.m43Error = "Please enter a valid email address.";
-        return false;
-      }
+    const normalizedFirst = normalizeName(first.value)
+    const normalizedLast = normalizeLastName(last.value)
+    const normalizedPhone = normalizePhoneForIdentifier(phone)
+
+    if (!normalizedFirst || !normalizedLast || !normalizedPhone) {
+      lookup.value = ''
+      return
     }
 
-    return true;
+    const firstInitial = normalizedFirst.substring(0, 1)
+    lookup.value = firstInitial + normalizedLast + normalizedPhone
   }
 
-  function validateEmailMatching() {
-    let valid = true;
+  // =========================================================
+  // FORM NAME AUTO-POPULATION (Builder-Safe)
+  // Populates hidden calc-formName field from .wFormTitle
+  // =========================================================
+  function populateFormName(form) {
+    if (!form) return
 
-    const groups = Array.from(document.querySelectorAll(".section.group"));
+    const field = form.querySelector(RESOLVED_CONFIG.selectors.formName)
+    if (!field) return
 
-    groups.forEach((group) => {
-      const nestedGroup = group.querySelector(".section.group");
-      if (nestedGroup) return;
+    const titleEl = document.querySelector(RESOLVED_CONFIG.selectors.formTitle)
+    const title = titleEl ? titleEl.textContent.trim() : ''
+    if (!title) return
 
-      const emails = group.querySelectorAll(EMAIL_SELECTOR);
-      if (emails.length !== 2) return;
-
-      const [email1, email2] = emails;
-
-      delete email2.dataset.m43Error;
-
-      const v1 = (email1.value || "").trim().toLowerCase();
-      const v2 = (email2.value || "").trim().toLowerCase();
-
-      if (!v1 || !v2) return;
-
-      if (v1 !== v2) {
-        email2.dataset.m43Error = "Email addresses must match.";
-        valid = false;
-      }
-    });
-
-    return valid;
-  }
-
-  function validateEmails() {
-    let valid = true;
-
-    const emails = document.querySelectorAll(EMAIL_SELECTOR);
-
-    emails.forEach((input) => {
-      if (!validateEmailFormat(input)) valid = false;
-    });
-
-    if (!validateEmailMatching()) valid = false;
-
-    return valid;
-  }
-
-  function renderBrandErrors(form) {
-    const oldSummary = form.querySelector(".m43-error-summary");
-    if (oldSummary) oldSummary.remove();
-
-    const invalidFields = Array.from(
-      form.querySelectorAll("[data-m43-error]")
-    );
-    if (!invalidFields.length) return;
-
-    const summary = document.createElement("div");
-    summary.className = "m43-error-summary";
-    summary.setAttribute("role", "alert");
-
-    summary.innerHTML = `
-      <div class="m43-error-summary-inner">
-        <strong>Please correct the following:</strong>
-        <ul></ul>
-      </div>
-    `;
-
-    const list = summary.querySelector("ul");
-
-    invalidFields.forEach((field) => {
-      if (!field || !(field instanceof HTMLElement)) return;
-
-      const label =
-        form.querySelector(`label[for="${field.id}"]`) ||
-        field.closest(".oneField")?.querySelector("label");
-
-      const message =
-        field.dataset.m43Error || "This field is required.";
-
-      const li = document.createElement("li");
-      li.textContent = label
-        ? `${label.textContent.trim()} — ${message}`
-        : message;
-      list.appendChild(li);
-
-      field.classList.add("m43-field-error");
-      field.setAttribute("aria-invalid", "true");
-
-      const fieldContainer =
-        field.closest(".oneField") || field.parentElement;
-
-      const existingInline =
-        fieldContainer.querySelector(".m43-inline-error");
-      if (existingInline) existingInline.remove();
-
-      const inline = document.createElement("div");
-      inline.className = "m43-inline-error";
-      inline.textContent = message;
-
-      const inlineId = `m43-error-${field.name || field.id || "field"}`;
-      inline.id = inlineId;
-
-      field.setAttribute("aria-describedby", inlineId);
-      fieldContainer.appendChild(inline);
-    });
-
-    form.prepend(summary);
-  }
-
-  function clearBrandErrors(form) {
-    const summary = form.querySelector(".m43-error-summary");
-    if (summary) summary.remove();
-
-    form.querySelectorAll(".m43-field-error").forEach((field) => {
-      field.classList.remove("m43-field-error");
-      field.removeAttribute("aria-invalid");
-      field.removeAttribute("aria-describedby");
-
-      const inline =
-        field.parentElement.querySelector(".m43-inline-error");
-      if (inline) inline.remove();
-    });
-  }
-
-  function navGateHandler(event) {
-    let form;
-
-    if (event.type === "submit") {
-      form = event.target;
-    } else {
-      form = event.target.closest("form");
+    // Prevent user edits but still allow submission
+    if (!field.hasAttribute('readonly')) {
+      field.setAttribute('readonly', 'readonly')
     }
 
-    if (!form) return;
-
-    clearBrandErrors(form);
-
-    let hasErrors = false;
-
-    if (!validatePhones()) hasErrors = true;
-    if (!validateEmails()) hasErrors = true;
-
-    if (hasErrors) {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      renderBrandErrors(form);
-    }
+    field.value = title
   }
 
-  async function init() {
+  // =========================================================
+  // VALUE STATE (UI POLISH)
+  // Adds .m43-has-value to inputs/selects/textarea when non-empty
+  // - Initializes on load (supports autofill)
+  // - Updates on input/change/blur
+  // =========================================================
+  function updateHasValueClass(el) {
+    if (!el || !el.classList) return
 
-    const phoneInputs = document.querySelectorAll(PHONE_SELECTOR);
+    // Skip buttons, radios, checkboxes, hidden fields
+    const type = (el.getAttribute && el.getAttribute('type')) || ''
+    if (type === 'button' || type === 'submit' || type === 'reset') return
+    if (type === 'radio' || type === 'checkbox' || type === 'hidden') return
 
-    if (phoneInputs.length) {
-      try {
-        const IMaskLib = await loadIMask();
-        phoneInputs.forEach((input) =>
-          applyPhoneMask(IMaskLib, input)
-        );
-      } catch (err) {
-        console.error("M43 IMask load failed:", err);
+    const v = (el.value || '').toString().trim()
+    el.classList.toggle('m43-has-value', v.length > 0)
+  }
+
+  function wireHasValueState(form) {
+    if (!form) return
+
+    const els = form.querySelectorAll(
+      'input[type="text"], input[type="email"], input[type="tel"], input[type="password"], textarea, select'
+    )
+
+    els.forEach((el) => {
+      // init (covers prefilled + browser autofill)
+      updateHasValueClass(el)
+
+      // keep fresh
+      el.addEventListener('input', () => updateHasValueClass(el))
+      el.addEventListener('change', () => updateHasValueClass(el))
+      el.addEventListener('blur', () => updateHasValueClass(el), true)
+    })
+  }
+
+  function validateForm(form) {
+    const __profile = profileStart('validateForm')
+    let isValid = true
+
+    clearInlineErrors(form)
+
+    const summaryMessages = []
+
+    const cfg = RESOLVED_CONFIG
+    debugLog('validateForm called')
+
+    const email = form.querySelector(cfg.selectors.email)
+    const confirm = form.querySelector(cfg.selectors.confirmEmail)
+    const phone = form.querySelector(cfg.selectors.phone)
+
+    // ---- EMAIL VALIDATION ----
+    if (email) {
+      const emailContainer = email.closest('.oneField')
+      const value = (email.value || '').trim()
+
+      if (!value) {
+        renderError(emailContainer, cfg.messages.emailRequired)
+        summaryMessages.push({ message: cfg.messages.emailRequired, fieldId: email.id })
+        isValid = false
+      } else if (!isValidEmailFormat(value)) {
+        renderError(emailContainer, cfg.messages.emailInvalid)
+        summaryMessages.push({ message: cfg.messages.emailInvalid, fieldId: email.id })
+        isValid = false
       }
     }
 
-    document.addEventListener(
-      "click",
-      (e) => {
-        const target = e.target;
+    if (confirm) {
+      const confirmContainer = confirm.closest('.oneField')
+      const v1 = email ? (email.value || '').trim().toLowerCase() : ''
+      const v2 = (confirm.value || '').trim().toLowerCase()
 
-        if (
-          target.matches('button[type="submit"]') ||
-          target.matches(".wFormNextButton") ||
-          target.matches(".wFormBackButton") ||
-          target.closest(".wfPagingButtons")
-        ) {
-          navGateHandler(e);
+      if (!v2) {
+        renderError(confirmContainer, cfg.messages.confirmRequired)
+        summaryMessages.push({ message: cfg.messages.confirmRequired, fieldId: confirm.id })
+        isValid = false
+      } else if (v1 && v2 && v1 !== v2) {
+        renderError(confirmContainer, cfg.messages.emailMismatch)
+        summaryMessages.push({ message: cfg.messages.emailMismatch, fieldId: confirm.id })
+        isValid = false
+      }
+    }
+
+    // ---- PHONE VALIDATION ----
+    if (phone) {
+      const phoneContainer = phone.closest('.oneField')
+      const digits = getPhoneDigits(phone)
+
+      if (!digits) {
+        renderError(phoneContainer, cfg.messages.phoneRequired)
+        summaryMessages.push({ message: cfg.messages.phoneRequired, fieldId: phone.id })
+        isValid = false
+      } else if (digits.length !== 10) {
+        renderError(phoneContainer, cfg.messages.phoneInvalid)
+        summaryMessages.push({ message: cfg.messages.phoneInvalid, fieldId: phone.id })
+        isValid = false
+      }
+    }
+
+    if (!isValid) {
+      renderSummary(form, summaryMessages)
+
+      const firstErrorContainer = form.querySelector('.m43-field-container-error')
+      if (firstErrorContainer) {
+        const firstInput = firstErrorContainer.querySelector('input, textarea, select')
+        if (firstInput) {
+          firstInput.focus({ preventScroll: false })
+          firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+          // Subtle shake animation
+          if (!firstErrorContainer.classList.contains('m43-shake')) {
+            firstErrorContainer.classList.add('m43-shake')
+            setTimeout(() => {
+              firstErrorContainer.classList.remove('m43-shake')
+            }, 400)
+          }
         }
-      },
-      true
-    );
-
-    document.addEventListener(
-      "submit",
-      navGateHandler,
-      true
-    );
+      }
+    }
+    profileEnd(__profile)
+    return isValid
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+  function validateField(input) {
+    if (!input) return true
+
+    const form = input.closest('form')
+    if (!form) return true
+
+    const cfg = RESOLVED_CONFIG
+    const email = form.querySelector(cfg.selectors.email)
+    const confirm = form.querySelector(cfg.selectors.confirmEmail)
+
+    const container = input.closest('.oneField')
+    if (!container) return true
+
+    const __profile = profileStart('validateField')
+
+    // Only clear this field's container
+    container.querySelectorAll('.m43-inline-error').forEach((e) => e.remove())
+
+    let isValid = true
+
+    // ----- EMAIL FIELD -----
+    if (input.classList.contains('calc-email')) {
+      const value = (input.value || '').trim()
+
+      if (value && !isValidEmailFormat(value)) {
+        renderError(container, cfg.messages.emailInvalid)
+        isValid = false
+      }
+
+      // If confirm exists, revalidate it too
+      if (confirm) {
+        const confirmContainer = confirm.closest('.oneField')
+        confirmContainer?.querySelectorAll('.m43-inline-error').forEach((e) => e.remove())
+
+        const v1 = value.toLowerCase()
+        const v2 = (confirm.value || '').trim().toLowerCase()
+
+        if (v2 && v1 !== v2) {
+          renderError(confirmContainer, cfg.messages.emailMismatch)
+        }
+      }
+    }
+
+    // ----- CONFIRM FIELD -----
+    if (input.classList.contains('calc-confirmEmail')) {
+      const v1 = email ? (email.value || '').trim().toLowerCase() : ''
+      const v2 = (input.value || '').trim().toLowerCase()
+
+      if (v2 && v1 && v1 !== v2) {
+        renderError(container, cfg.messages.emailMismatch)
+        isValid = false
+      }
+    }
+
+    // ----- PHONE FIELD -----
+    if (input.classList.contains('calc-phone')) {
+      const digits = getPhoneDigits(input)
+
+      if (digits && digits.length !== 10) {
+        renderError(container, cfg.messages.phoneInvalid)
+        isValid = false
+      }
+    }
+
+    profileEnd(__profile)
+    return isValid
   }
 
-})();
+  function handleSubmit(event) {
+    const __profile = profileStart('handleSubmit')
+
+    const form = event.target
+    if (!form || form.tagName !== 'FORM') {
+      profileEnd(__profile)
+      return
+    }
+
+    const valid = validateForm(form)
+    debugLog('submit validation result:', valid)
+
+    if (!valid) {
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+      profileEnd(__profile)
+      return false
+    }
+
+    profileEnd(__profile)
+  }
+
+  document.addEventListener('submit', handleSubmit, true)
+
+  // Initialize value-state styling for all forms on the page
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll(RESOLVED_CONFIG.selectors.form).forEach((f) => {
+      wireHasValueState(f)
+      initPhoneMaskForForm(f)
+      if (ENABLE_IDENTIFIER) {
+  buildContactLookupIdentifier(f)
+}
+      populateFormName(f)
+    })
+  })
+
+  document.addEventListener('input', function (event) {
+    const target = event.target
+    if (!target || target.tagName !== 'INPUT') return
+
+    updateHasValueClass(target)
+
+    if (target.classList.contains('calc-phone')) {
+      // In case this phone input was injected dynamically (repeat/conditional)
+      applyPhoneMaskToInput(target)
+    }
+
+    if (
+      target.classList.contains('calc-email') ||
+      target.classList.contains('calc-confirmEmail') ||
+      target.classList.contains('calc-phone')
+    ) {
+      validateField(target)
+    }
+
+    if (
+  target.classList.contains('calc-fname') ||
+  target.classList.contains('calc-lname') ||
+  target.classList.contains('calc-phone')
+) {
+  const form = target.closest('form')
+  if (form && ENABLE_IDENTIFIER) {
+    buildContactLookupIdentifier(form)
+  }
+}
+  })
+
+  document.addEventListener('blur', function (event) {
+    const target = event.target
+    if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT')) return
+
+    updateHasValueClass(target)
+
+    if (
+      target.classList.contains('calc-email') ||
+      target.classList.contains('calc-confirmEmail') ||
+      target.classList.contains('calc-phone')
+    ) {
+      validateField(target)
+    }
+  }, true)
+  /* ===============================
+     PHASE C — NAVIGATION GATE
+     Blocks Next button if validation fails
+     =============================== */
+
+  function handleNavClick(event) {
+    const __profile = profileStart('handleNavClick')
+    const btn = event.target.closest('.wfPageNextButton')
+    if (!btn) {
+      profileEnd(__profile)
+      return
+    }
+
+    const form = btn.closest('form')
+    if (!form) {
+      profileEnd(__profile)
+      return
+    }
+
+    const valid = validateForm(form)
+    debugLog('nav validation result:', valid)
+
+    if (!valid) {
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+      profileEnd(__profile)
+      return false
+    }
+    profileEnd(__profile)
+  }
+
+  // Capture-phase interception (prevents FA from advancing)
+  document.addEventListener('mousedown', handleNavClick, true)
+  document.addEventListener('click', handleNavClick, true)
+
+  // Engine-level safety wrap (if wFORMS paging exists)
+  function attachPagingGate() {
+    if (!window.wFORMS || !wFORMS.behaviors || !wFORMS.behaviors.paging || !wFORMS.behaviors.paging.run) {
+      return false
+    }
+
+    if (wFORMS.behaviors.paging.run.__m43Wrapped) {
+      return true
+    }
+
+    const originalRun = wFORMS.behaviors.paging.run
+
+    function wrappedPagingRun() {
+      const __profile = profileStart('wrappedPagingRun')
+      const form = document.querySelector(RESOLVED_CONFIG.selectors.form)
+      if (form && !validateForm(form)) {
+        profileEnd(__profile)
+        return false
+      }
+
+      const result = originalRun.apply(this, arguments)
+      profileEnd(__profile)
+      return result
+    }
+
+    wrappedPagingRun.__m43Wrapped = true
+    wFORMS.behaviors.paging.run = wrappedPagingRun
+
+    return true
+  }
+
+  // Attempt immediate attach, retry briefly if FA loads late
+  if (!attachPagingGate()) {
+    let tries = 0
+    const interval = setInterval(function () {
+      tries++
+      if (attachPagingGate() || tries > 50) {
+        clearInterval(interval)
+      }
+    }, 100)
+  }
+})()
