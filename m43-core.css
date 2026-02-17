@@ -1,4 +1,19 @@
 /* =========================================================
+   LOCK STATUS
+   ---------------------------------------------------------
+   Version: 1.2-final
+   Status: Production Locked
+   Last Audit: 2026-02
+   Locked By: Mission43 Core System
+
+   This version is frozen.
+   Visual changes require:
+   - Token update only
+   - CHANGELOG.md entry
+   - Version bump
+   ========================================================= */
+
+/* =========================================================
    DESIGN SYSTEM GOVERNANCE
    ---------------------------------------------------------
    This file defines the canonical Mission43 form UI system.
@@ -24,6 +39,25 @@
 
 /* =========================================================
    1. DESIGN TOKENS
+   ========================================================= */
+
+/* =========================================================
+   TOKEN FREEZE NOTICE
+   ---------------------------------------------------------
+   These tokens define the Mission43 brand foundation.
+
+   DO NOT modify directly without:
+   - Brand review
+   - Accessibility contrast validation
+   - CHANGELOG.md entry
+   - Version bump
+
+   If a new color or spacing value is needed:
+   1. Add a new token here
+   2. Document usage
+   3. Do NOT hardcode values in component sections
+
+   This prevents long-term brand drift across forms.
    ========================================================= */
 
 :root {
@@ -99,6 +133,7 @@
    4. INPUT SYSTEM
    ========================================================= */
 
+
 .wForm input[type="text"],
 .wForm input[type="email"],
 .wForm input[type="tel"],
@@ -107,7 +142,7 @@
 .wForm select {
   appearance: none !important;
   font-family: "Inter Variable", Inter, sans-serif !important;
-  background: var(--m43-fill) !important;
+  background: #FFFFFF !important;
   border: 1px solid var(--m43-border) !important;
   border-radius: var(--m43-radius-input) !important;
   font-size: 16px !important;
@@ -115,6 +150,59 @@
   padding: 12px 14px !important;
   min-height: 44px !important;
   box-sizing: border-box !important;
+}
+
+/* =========================================================
+   4A. SELECT + MULTI-SELECT + TEXTAREA REFINEMENTS
+   Aligns advanced inputs with core input system
+   ========================================================= */
+
+/* --- Custom Select Arrow (Unified Brand Appearance) --- */
+.wForm select:not([multiple]) {
+  padding-right: 40px !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23171717' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 14px !important;
+}
+
+/* Ensure select matches default field fill before interaction */
+.wForm select {
+  background-color: #FFFFFF !important;
+}
+
+/* --- Multi Select Alignment --- */
+
+.wForm select[multiple] {
+  padding: 12px 14px !important;
+  min-height: 120px !important;
+  font-weight: 500 !important;
+  appearance: none !important;
+  background-color: #FFFFFF !important;
+}
+
+/* --- Multi Select: Subtle Brand-Tinted Selected Options --- */
+.wForm select[multiple] option:checked {
+  background-color: rgba(212,22,54,.08) !important;
+  color: var(--m43-text-primary) !important;
+}
+
+/* Slight border emphasis when multi-select has value */
+.wForm select[multiple].m43-has-value {
+  border-color: rgba(23,23,23,.35) !important;
+}
+
+/* --- Textarea Refinement --- */
+.wForm textarea {
+  min-height: 120px !important;
+  resize: vertical !important; /* Prevent diagonal OS chrome */
+  background-color: #FFFFFF !important;
+}
+
+/* Ensure completed state works consistently */
+.wForm select.m43-has-value,
+.wForm textarea.m43-has-value {
+  background: var(--m43-fill-complete) !important;
 }
 
 
@@ -125,7 +213,7 @@
   background: var(--m43-fill-focus) !important;
   border-color: var(--m43-red) !important;
   box-shadow: 0 0 0 3px rgba(240,47,78,.12) !important;
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
 /* --- Completed Field State --- */
@@ -136,9 +224,6 @@
   transition: background .15s ease;
 }
 
-/* =========================================================
-   5. BUTTON SYSTEM
-   ========================================================= */
 
 .wFormContainer .actions input[type="submit"],
 .wFormContainer .wfPagingButtons input {
@@ -600,5 +685,25 @@
   /* --- Improve mobile tap targets for choices --- */
   .wForm .choices .oneChoice label.postField {
     padding: 16px 18px !important;
+  }
+}
+
+/* =========================================================
+   11. ACCESSIBILITY – Reduced Motion Support
+   Prevents animation for users who prefer reduced motion
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .wForm .oneField.m43-shake {
+    animation: none !important;
+  }
+
+  .m43-error-summary,
+  .wForm input,
+  .wForm textarea,
+  .wForm select,
+  .wForm .choices .oneChoice label.postField {
+    transition: none !important;
   }
 }
