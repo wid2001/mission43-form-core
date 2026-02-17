@@ -430,3 +430,807 @@ Before each production merge:
 5. Deploy
 
 ---
+
+# Mission43 Form Core
+
+Enterprise‑grade reusable CSS + JS validation and UX layer for FormAssembly forms (Mission43 + Fieldhouse).
+
+Status: **Production Declared**
+Version: **v2.1**
+Stability Tier: **Locked Core – Production Approved**
+
+---
+
+# 🚀 PRODUCTION INJECTION (COPY / PASTE)
+
+This is the official production injection block for all Mission43 forms.
+
+Place this in the FormAssembly **Custom Code** section (before closing `</head>`).
+
+<!-- Mission43 Form Core (Production) -->
+<script>
+  // REQUIRED — brand switch
+  window.M43_FORM_BRAND = "mission43"; // or "fieldhouse"
+
+  // Optional: profiling (development only)
+  // window.M43_PROFILE = true;
+
+  // Optional: per-form overrides
+  // window.M43_FORM_CONFIG = {
+  //   selectors: {
+  //     form: "form",
+  //     email: "input.calc-email",
+  //     confirmEmail: "input.calc-confirmEmail",
+  //     phone: "input.calc-phone",
+  //     identifier: "input.calc-contactLookupIdentifier",
+  //     formName: "input.calc-formName"
+  //   },
+  //   messages: {
+  //     emailMismatch: "Email addresses must match."
+  //   }
+  // };
+
+  // Optional feature flags (default = enabled)
+  // window.M43_DISABLE_IDENTIFIER = true;
+  // window.M43_DISABLE_FORMNAME = true;
+  // window.M43_DISABLE_MASK = true;
+</script>
+
+<link rel="stylesheet" href="https://mission43-form-core.pages.dev/m43-core.css">
+<script src="https://mission43-form-core.pages.dev/m43-core.min.js" defer></script>
+
+⚠️ Do NOT load both minified and non‑minified JS.
+⚠️ Always use the `.min.js` file in production.
+
+---
+
+# 📘 What This Core Provides
+
+This is not a simple script.
+
+This is a reusable enterprise validation + UX system designed specifically for FormAssembly.
+
+Core capabilities:
+
+• Brand‑consistent UI system
+• Hybrid validation engine
+• Email + confirm matching
+• Phone mask (10‑digit enforcement)
+• Navigation gating (submit + paging)
+• Inline + summary errors
+• Smooth scroll + focus management
+• Salesforce identifier parity logic
+• Form name auto‑population
+• Accessibility wiring (ARIA compliant)
+• Performance profiling hooks
+• Feature‑flag safety controls
+• Mobile UX optimization
+
+---
+
+# 🏗 Architecture Overview
+
+The engine follows a hybrid model:
+
+1. Configuration resolution (defaults + overrides)
+2. Field discovery via class selectors (no hardcoded IDs)
+3. Event‑delegated validation
+4. Submit capture enforcement
+5. wFORMS paging override
+6. Identifier + mask application
+7. Error rendering (inline + summary)
+8. Accessibility wiring
+9. Optional profiling instrumentation
+
+Performance design principles:
+
+• No global MutationObservers
+• No per‑keystroke DOM rescans
+• No layout thrash loops
+• No unnecessary reflows
+• Mask applied once
+• Identifier computed only when relevant fields change
+
+Bundle size (minified + gzipped): ~3–4 KB
+
+---
+
+# 🧩 Required FormAssembly Builder Setup
+
+Fields must include these classes:
+
+Email
+`validate-email calc-email`
+
+Confirm Email
+`validate-email calc-confirmEmail`
+
+Phone
+`calc-phone`
+
+Contact Lookup Identifier (Hidden or Read‑Only Recommended)
+`calc-contactLookupIdentifier`
+
+Form Name Field (Hidden Recommended)
+`calc-formName`
+
+These classes are how the engine discovers fields.
+
+No IDs are required.
+
+---
+
+# 🔧 Configuration System
+
+Default configuration:
+
+Selectors:
+form
+email
+confirmEmail
+phone
+
+Messages:
+emailRequired
+emailInvalid
+confirmRequired
+emailMismatch
+phoneRequired
+phoneInvalid
+
+Override example:
+
+<script>
+window.M43_FORM_CONFIG = {
+  messages: {
+    emailMismatch: "Custom mismatch message."
+  }
+};
+</script>
+
+Overrides merge deeply into defaults.
+
+---
+
+# 🏷 Feature Flags
+
+Must be set BEFORE script loads.
+
+window.M43_PROFILE = true
+→ Enables performance logs in console
+
+window.M43_DEBUG = true
+→ Enables debug logging
+
+window.M43_DISABLE_IDENTIFIER = true
+→ Disables Salesforce identifier logic
+
+window.M43_DISABLE_FORMNAME = true
+→ Disables form name auto‑population
+
+window.M43_DISABLE_MASK = true
+→ Disables phone mask
+
+---
+
+# 🧠 Validation Rules
+
+Email:
+• Required
+• Valid format
+• Must match confirm (case insensitive)
+
+Phone:
+• Required
+• 10 digits
+• Masked input `(###) ###‑####`
+
+Errors:
+• Inline under field
+• Summary at top
+• Smooth scroll
+• ARIA attributes wired
+• Focus directed to first invalid field
+
+Navigation:
+• Submit capture enforcement
+• wFORMS paging override
+• Prevents next page if invalid
+
+---
+
+# 🔐 Salesforce Identifier Logic
+
+Matches Apex service:
+
+firstInitial + normalizedLastName + digitsOnlyPhone
+
+Normalization rules:
+
+• Lowercase
+• Diacritics stripped
+• Last name non‑alphanumeric removed
+• Phone digits only
+
+Auto‑updates when:
+• First name changes
+• Last name changes
+• Phone changes
+
+Identifier field should be:
+Hidden OR read‑only (recommended)
+
+---
+
+# 📝 Form Name Auto‑Population
+
+Reads:
+
+`.wFormTitle`
+
+Populates:
+
+`calc-formName` field
+
+Safe for hidden fields.
+
+---
+
+# 🎨 Styling System
+
+Includes:
+
+• Design tokens (frozen v1.2-final)
+• White empty input state
+• Filled state via `.m43-has-value`
+• Error container styling
+• Red card selection styling
+• Dropdown + multi-select alignment
+• Mobile stacking (<768px)
+• Touch target optimization
+• Shake animation (subtle)
+• Smooth summary collapse
+
+Design tokens are locked.
+Changes must follow versioning protocol.
+
+---
+
+# 📱 Mobile Behavior
+
+Below 768px:
+
+• Fields stack vertically
+• Improved spacing rhythm
+• Larger tap targets
+• Error containers adjusted
+• Touch‑safe selection cards
+
+---
+
+# 📊 Performance + Lighthouse
+
+Validated production metrics (FormAssembly constraints):
+
+Accessibility: 98–100
+Best Practices: 100
+SEO: 90+
+Performance: limited by FormAssembly + GTM, not core
+
+Core does NOT introduce:
+
+• Long tasks
+• TBT issues
+• Layout thrash
+• Main thread blocking
+
+---
+
+# 🛠 Development Workflow
+
+Local test:
+
+npx serve .
+
+Minify:
+
+npx terser m43-core.js -c -m -o m43-core.min.js
+
+Size check:
+
+wc -c m43-core.js
+gzip -c m43-core.js | wc -c
+wc -c m43-core.min.js
+gzip -c m43-core.min.js | wc -c
+
+---
+
+# 🔄 Release Protocol (Production)
+
+1. Update CHANGELOG.md
+2. Commit changes
+3. Tag release (git tag vX.X.X)
+4. Push tags (git push --tags)
+5. Merge to main
+6. Cloudflare auto‑deploy
+
+Never merge without tagging.
+
+---
+
+# 🧪 Stability Checklist
+
+Before production merge:
+
+✓ Email mismatch tested
+✓ Phone invalid tested
+✓ Summary scroll verified
+✓ Paging gate verified
+✓ Identifier matches Apex output
+✓ Mask not double‑applied
+✓ Mobile layout verified
+✓ Profiling under 15ms validateForm
+
+---
+
+# 🧱 Safe Extension Rules
+
+When modifying:
+
+• Do not add global querySelectorAll loops per keystroke
+• Do not hardcode field IDs
+• Maintain Salesforce parity
+• Use feature flags for optional logic
+• Avoid touching FormAssembly structural classes
+• Preserve accessibility attributes
+
+---
+
+# 🧭 Architecture Positioning
+
+This is a reusable UX + validation layer.
+
+It is:
+
+Configurable
+Builder‑safe
+Performance‑aware
+Salesforce‑aligned
+Accessibility‑compliant
+Enterprise stable
+
+---
+
+# 📁 File Structure
+
+m43-core.css
+m43-core.js
+m43-core.min.js
+
+Production uses minified file only.
+
+---
+
+# 🏁 Production Declaration
+
+Mission43 Form Core v2.1 is formally declared:
+
+Production Stable
+Enterprise Approved
+Performance Reviewed
+Accessibility Reviewed
+Token Locked
+
+---
+
+# 📜 Changelog
+
+All changes are documented in CHANGELOG.md.
+
+Semantic Versioning:
+
+MAJOR → Breaking changes
+MINOR → New features
+PATCH → Fixes
+
+Example format:
+
+## [2.1.0] - YYYY-MM-DD
+### Added
+### Changed
+### Fixed
+
+---
+
+End of README.
+
+# Mission43 Form Core
+
+Enterprise-grade reusable CSS + JS validation and UX layer for FormAssembly forms (Mission43 + Fieldhouse).
+
+Status: Production Declared
+Current Stable Version: v2.1
+Stability Tier: Locked Core – Production Approved
+Deployment: Cloudflare Pages (auto-deploy from `main`)
+
+---
+
+## 🚀 Quick Start (Production)
+
+Place this in the FormAssembly **Custom Code → Head** section:
+
+<!-- Mission43 Form Core (Production) -->
+<script>
+  window.M43_FORM_BRAND = "mission43"; // or "fieldhouse"
+
+  // Optional: profiling (development only)
+  // window.M43_PROFILE = true;
+
+  // Optional: per-form overrides
+  // window.M43_FORM_CONFIG = {
+  //   selectors: {
+  //     form: "form",
+  //     email: "input.calc-email",
+  //     confirmEmail: "input.calc-confirmEmail",
+  //     phone: "input.calc-phone",
+  //     identifier: "input.calc-contactLookupIdentifier",
+  //     formName: "input.calc-formName"
+  //   },
+  //   messages: {
+  //     emailMismatch: "Email addresses must match."
+  //   }
+  // };
+
+  // Optional feature flags
+  // window.M43_DISABLE_IDENTIFIER = true;
+  // window.M43_DISABLE_FORMNAME = true;
+  // window.M43_DISABLE_MASK = true;
+</script>
+
+<link rel="stylesheet" href="https://mission43-form-core.pages.dev/m43-core.css">
+<script src="https://mission43-form-core.pages.dev/m43-core.min.js" defer></script>
+
+⚠️ Always use the `.min.js` file in production.
+⚠️ Do NOT load both minified and non-minified versions.
+
+---
+
+## 📌 What This Core Is (And Is Not)
+
+This is a reusable enterprise validation + UX layer built specifically for FormAssembly.
+
+It is:
+
+• Builder-safe
+• Performance-aware
+• Salesforce-aligned
+• Accessibility-compliant
+• Feature-flag controlled
+• Production governed
+
+It is NOT:
+
+• A form builder replacement
+• A global DOM mutation engine
+• A heavy front-end framework
+• Dependent on hardcoded field IDs
+
+The system relies on class-based field targeting only.
+
+---
+
+## 📁 File Structure
+
+m43-core.css      → Brand styling + layout system
+m43-core.js       → Full readable source (development)
+m43-core.min.js   → Production bundle (minified)
+
+
+Production deployments must use `m43-core.min.js`.
+
+---
+
+## 🏷 Versioning Strategy (CSS vs JS)
+
+Mission43 Form Core uses **independent versioning** for CSS and JS layers.
+
+This is intentional and enterprise-aligned.
+
+### CSS Layer
+File: `m43-core.css`
+Current Version: **v1.2-final**
+Responsibility:
+• Design tokens
+• Layout system
+• Input styling
+• Error UI
+• Mobile stacking
+• Visual system consistency
+
+The CSS layer evolves only when visual system or token changes are required.
+Design tokens are currently **frozen under v1.2-final**.
+
+---
+
+### JS Layer
+File: `m43-core.js` / `m43-core.min.js`
+Current Version: **v2.1**
+Responsibility:
+• Validation engine
+• Email/confirm logic
+• Phone masking
+• Navigation gating
+• Salesforce identifier parity
+• Form name auto-population
+• Accessibility wiring
+• Feature flags
+• Profiling instrumentation
+
+The JS layer may evolve independently of CSS.
+
+---
+
+### Why Versions Are Independent
+
+CSS and JS represent two different subsystems:
+
+• CSS → Visual Design System
+• JS → Behavioral Validation Engine
+
+They evolve at different speeds and have different stability constraints.
+
+Keeping them independently versioned:
+
+• Prevents unnecessary CSS churn
+• Prevents forced JS re-versioning for UI-only changes
+• Preserves architectural clarity
+• Reduces regression risk
+
+---
+
+### Compatibility Guarantee
+
+Current compatibility contract:
+
+CSS **v1.2-final**
+JS **v2.1**
+
+JS v2.x is fully compatible with CSS v1.2-final.
+
+If a future CSS change requires JS support (or vice versa), that will be documented explicitly in the CHANGELOG.
+
+---
+
+Do not artificially synchronize CSS and JS versions unless a breaking architectural change requires it.
+
+---
+
+---
+
+## 🧩 Required FormAssembly Builder Setup
+
+Fields must include these classes:
+
+Email
+`validate-email calc-email`
+
+Confirm Email
+`validate-email calc-confirmEmail`
+
+Phone
+`calc-phone`
+
+Contact Lookup Identifier (Hidden or Read-Only Recommended)
+`calc-contactLookupIdentifier`
+
+Form Name Field (Hidden Recommended)
+`calc-formName`
+
+These classes are how the engine discovers fields dynamically.
+
+No IDs are required.
+
+---
+
+## 🔧 Configuration System
+
+Default configuration includes:
+
+Selectors:
+- form
+- email
+- confirmEmail
+- phone
+- identifier
+- formName
+
+Messages:
+- emailRequired
+- emailInvalid
+- confirmRequired
+- emailMismatch
+- phoneRequired
+- phoneInvalid
+
+Override example:
+
+<script>
+window.M43_FORM_CONFIG = {
+  messages: {
+    emailMismatch: "Custom mismatch message."
+  }
+};
+</script>
+
+Overrides merge deeply into defaults.
+
+---
+
+## 🏷 Feature Flags
+
+Must be set BEFORE script loads.
+
+window.M43_PROFILE = true
+→ Enables performance logs
+
+window.M43_DEBUG = true
+→ Enables debug logs
+
+window.M43_DISABLE_IDENTIFIER = true
+→ Disables Salesforce identifier logic
+
+window.M43_DISABLE_FORMNAME = true
+→ Disables form name auto-population
+
+window.M43_DISABLE_MASK = true
+→ Disables phone mask
+
+---
+
+## 🧠 Validation Rules
+
+Email:
+• Required
+• Valid format
+• Must match confirm (case insensitive)
+
+Phone:
+• Required
+• 10 digits
+• Masked input `(###) ###-####`
+
+Errors:
+• Inline under field
+• Summary at top
+• Smooth scroll
+• ARIA attributes wired
+• Focus directed to first invalid field
+
+Navigation:
+• Submit capture enforcement
+• wFORMS paging override
+• Prevents next page if invalid
+
+---
+
+## 🔐 Salesforce Identifier Logic
+
+Matches Apex service:
+
+firstInitial + normalizedLastName + digitsOnlyPhone
+
+Normalization rules:
+
+• Lowercase
+• Diacritics stripped
+• Last name non-alphanumeric removed
+• Phone digits only
+
+Auto-updates when:
+• First name changes
+• Last name changes
+• Phone changes
+
+Identifier field should be hidden or read-only.
+
+---
+
+## 📝 Form Name Auto-Population
+
+Reads `.wFormTitle`
+
+Populates `calc-formName` field
+
+Safe for hidden fields.
+
+---
+
+## 🎨 Styling System
+
+Includes:
+
+• Design tokens (frozen v1.2-final)
+• White empty input state
+• Filled state via `.m43-has-value`
+• Error container styling
+• Dropdown + multi-select alignment
+• Mobile stacking (<768px)
+• Touch target optimization
+• Shake animation (subtle)
+• Smooth summary collapse
+
+Design tokens are locked. Changes must follow versioning protocol.
+
+---
+
+## 📱 Mobile Behavior
+
+Below 768px:
+
+• Fields stack vertically
+• Improved spacing rhythm
+• Larger tap targets
+• Error containers adjusted
+• Touch-safe selection cards
+
+---
+
+## 📊 Performance & Lighthouse
+
+Core does NOT introduce:
+
+• Long tasks
+• Layout thrash
+• Main thread blocking
+
+Profiling example:
+[M43 PROFILE] validateForm: 8.5ms
+
+Bundle size (minified + gzipped): ~3–4 KB
+
+---
+
+## 🔒 Governance & Change Control
+
+This repository follows strict production governance.
+
+Modification Rules:
+
+• All behavior changes require CHANGELOG entry
+• All releases must be tagged before merging to `main`
+• Core selectors must remain class-driven
+• Salesforce identifier logic must remain parity-accurate
+• Design tokens frozen under v1.2-final
+
+Release Flow:
+
+1. Update CHANGELOG.md
+2. Commit
+3. Tag release (`git tag vX.X.X`)
+4. Push tags (`git push --tags`)
+5. Merge to main
+6. Cloudflare auto-deploy
+
+Never merge without tagging.
+
+---
+
+## 🧪 Stability Checklist
+
+Before production merge:
+
+✓ Email mismatch tested
+✓ Phone invalid tested
+✓ Summary scroll verified
+✓ Paging gate verified
+✓ Identifier matches Apex output
+✓ Mask not double-applied
+✓ Mobile layout verified
+✓ Profiling under 15ms validateForm
+
+---
+
+Mission43 Form Core v2.1
+Production Stable
+Enterprise Approved
+Token Locked

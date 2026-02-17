@@ -1,5 +1,3 @@
-
-
 # Changelog
 
 All notable changes to **Mission43 Form Core** will be documented in this file.
@@ -8,7 +6,7 @@ This project adheres to Semantic Versioning (SemVer).
 
 ---
 
-## [2.1.0] - 2026-02-16
+## [2.1.0] - 2026-02-16 (Production Release — JS Engine)
 
 ### Added
 - Hybrid validation engine (enterprise-grade core with per-form override support)
@@ -39,6 +37,8 @@ This project adheres to Semantic Versioning (SemVer).
 - Defensive late-load paging attach with retry loop
 - Deep config merge utility
 - CSS design token comments to prevent future brand drift
+- Production minified bundle (`m43-core.min.js`)
+- Lighthouse validation baseline (Mobile + Desktop performance review completed)
 
 ### Improved
 - Mobile layout stacking behavior
@@ -63,6 +63,56 @@ This project adheres to Semantic Versioning (SemVer).
 - CSP-safe script loading handling
 - Mask re-application duplication bug
 
+### Production Declaration
+- v2.1.0 is formally declared Production Stable.
+- All validation, navigation gating, identifier logic, phone masking, accessibility wiring, and design token systems are locked.
+- Only additive, non-breaking enhancements are permitted moving forward under SemVer minor versions.
+- Breaking architectural changes require a major version increment (3.x.x).
+
+---
+
+## [CSS 1.2-final] - 2026-02-16 (Design System Lock)
+
+### Scope
+- m43-core.css (visual system only)
+- Independent version track from JS engine
+
+### Added
+- Formalized design token system (Mission43 brand lock)
+- Unified input state model:
+  - Default (white)
+  - Filled (`.m43-has-value`)
+  - Focus
+  - Error
+- Harmonized styling for:
+  - Text inputs
+  - Textareas
+  - Single-select dropdowns
+  - Multi-select lists
+  - Checkbox and radio faux controls
+- Soft-red selected state for radios/checkboxes
+- Mobile stacking enforcement
+- Improved touch targets for interactive controls
+- Accessible focus ring animation
+- Subtle hover elevation (desktop)
+- Error summary visual refinement
+- Animated summary collapse
+
+### Improved
+- Visual alignment between:
+  - Text inputs
+  - Dropdowns
+  - Multi-select lists
+  - Radio/checkbox card states
+- Reduced vertical rhythm on mobile
+- Increased border contrast for unselected states
+
+### Production Declaration
+- CSS v1.2-final is visually locked.
+- Design tokens are frozen.
+- Future changes must be additive and brand-safe.
+- Structural layout changes require minor version increment (1.3.x).
+- Visual breaking changes require major version increment (2.0.0 CSS track).
 ---
 
 ## [2.0.0] - 2026-02-15
@@ -149,5 +199,20 @@ window.M43_DISABLE_FORMNAME = true
 ```
 
 ---
+
+---
+
+### Versioning Clarification
+
+Mission43 Form Core maintains **independent version tracks**:
+
+- JS Engine → 2.x.x (behavioral / validation engine)
+- CSS System → 1.x.x (design system / visual layer)
+
+Both are production-stable as of:
+- JS: 2.1.0
+- CSS: 1.2-final
+
+These version tracks evolve independently under SemVer principles.
 
 End of file.
