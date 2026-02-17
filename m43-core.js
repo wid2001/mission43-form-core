@@ -647,6 +647,18 @@ const ENABLE_IDENTIFIER =
       return false
     }
 
+    // ---------------------------------------------------------
+    // Normalize phone to digits-only before submission
+    // Ensures Salesforce connector lookup parity (xxx-xxx-xxxx → xxxxxxxxxx)
+    // ---------------------------------------------------------
+    const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
+    if (phone) {
+      const digits = getPhoneDigits(phone)
+      if (digits) {
+        phone.value = digits
+      }
+    }
+
     profileEnd(__profile)
   }
 
