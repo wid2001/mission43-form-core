@@ -15,6 +15,124 @@
     if (!DEBUG) return
     console.log.apply(console, ['[M43]', ...arguments])
   }
+
+    // ---------------------------------------------------------
+    // MICRO PROFILING (lightweight, debug-only)
+    // Enable via: window.M43_PROFILE = true
+    // ---------------------------------------------------------
+    function isProfileEnabled() {
+      return !!window.M43_PROFILE
+    }
+
+    function profileStart(label) {
+      if (!isProfileEnabled() || !window.performance || !performance.now) return null
+      return { label, start: performance.now() }
+    }
+
+    function profileEnd(token) {
+      if (!isProfileEnabled() || !token || !window.performance || !performance.now) return
+      const duration = performance.now() - token.start
+      console.log('[M43 PROFILE]', token.label + ':', duration.toFixed(2) + 'ms')
+    }
+
+  // =========================================================
+  // PHONE MASKING (IMask)
+  // - Uses IMask if available, otherwise loads from CDN
+  // - Applies to inputs matching cfg.selectors.phone (default: input.calc-phone)
+  // - Idempotent: never double-applies
+  // =========================================================
+  const IMASK_CDN = 'https://cdn.jsdelivr.net/npm/imask@7.6.1/dist/imask.min.js'
+
+  const MASK_CONFIG = {
+    mask: '(000) 000-0000',
+    lazy: true,
+    placeholderChar: '_',
+  }
+
+  const __m43MaskLoad = {
+    promise: null,
+  }
+
+  function loadIMaskOnce() {
+    if (window.IMask) return Promise.resolve(window.IMask)
+    if (__m43MaskLoad.promise) return __m43MaskLoad.promise
+
+    __m43MaskLoad.promise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-m43-imask]')
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.IMask))
+        existing.addEventListener('error', reject)
+        return
+      }
+
+      const s = document.createElement('script')
+      s.src = IMASK_CDN
+      s.async = true
+      s.defer = true
+      s.setAttribute('data-m43-imask', 'true')
+      s.onload = () => resolve(window.IMask)
+      s.onerror = reject
+      document.head.appendChild(s)
+    })
+
+    return __m43MaskLoad.promise
+  }
+
+  function applyPhoneMaskToInput(input) {
+    if (!input || input.dataset.m43MaskApplied === 'true') return
+
+    // Do not mask disabled/hidden inputs
+    if (input.disabled) return
+    const type = (input.getAttribute('type') || '').toLowerCase()
+    if (type && type !== 'tel' && type !== 'text') return
+
+    loadIMaskOnce()
+      .then((IMask) => {
+        if (!IMask || input.dataset.m43MaskApplied === 'true') return
+
+        // Memory-safety: if a mask instance is already attached (unexpected), destroy it
+        try {
+        if (input.__m43IMask && typeof input.__m43IMask.destroy === 'function') {
+        input.__m43IMask.destroy()
+        }
+        } catch (_) {}
+        input.__m43IMask = null
+
+        // Apply IMask
+        const mask = IMask(input, MASK_CONFIG)
+        input.__m43IMask = mask
+        input.dataset.m43MaskApplied = 'true'
+
+        // Keep UI polish + validation in sync with mask changes
+        mask.on('accept', () => {
+          updateHasValueClass(input)
+          if (input.classList.contains('calc-phone')) {
+            validateField(input)
+          }
+        })
+        mask.on('complete', () => {
+          updateHasValueClass(input)
+          if (input.classList.contains('calc-phone')) {
+            validateField(input)
+          }
+        })
+
+        // Initial sync (covers autofill / prefilled)
+        try {
+          mask.updateValue()
+        } catch (_) {}
+        updateHasValueClass(input)
+      })
+      .catch(() => {
+        // Mask load failed; validation will still work
+      })
+  }
+
+  function initPhoneMaskForForm(form) {
+    if (!form) return
+    const phoneInputs = form.querySelectorAll(RESOLVED_CONFIG.selectors.phone)
+    phoneInputs.forEach((inp) => applyPhoneMaskToInput(inp))
+  }
   // =========================================================
   // M43 HYBRID CONFIG
   // - Internal defaults
@@ -26,6 +144,9 @@
       email: 'input.calc-email',
       confirmEmail: 'input.calc-confirmEmail',
       phone: 'input.calc-phone',
+      contactLookupIdentifier: 'input.calc-contactLookupIdentifier',
+      formName: 'input.calc-formName',
+      formTitle: '.wFormTitle',
     },
     messages: {
       emailRequired: 'Email is required.',
@@ -58,6 +179,12 @@
     const override = window.M43_FORM_CONFIG
     return mergeDeep(DEFAULT_CONFIG, override)
   }
+  // ---------------------------------------------------------
+// RESOLVED CONFIG (single-form per page assumption)
+// Prevent repeated deep merges during runtime
+// ---------------------------------------------------------
+const RESOLVED_CONFIG = getConfig()
+
   function clearInlineErrors(scope) {
     // Remove inline error messages
     scope.querySelectorAll('.m43-inline-error').forEach((e) => e.remove())
@@ -193,6 +320,122 @@
     return (value || '').replace(/\D/g, '')
   }
 
+  function getPhoneDigits(input) {
+    if (!input) return ''
+    // Prefer IMask unmasked value when available (source of truth)
+    const m = input.__m43IMask
+    if (m && typeof m.unmaskedValue === 'string') return m.unmaskedValue
+    return digitsOnly(input.value)
+  }
+// NOTE: Do NOT return early here.
+// ENABLE_IDENTIFIER must only gate identifier logic, not the entire M43 core.
+
+  // Feature flag (can be overridden per form)
+// window.M43_ENABLE_IDENTIFIER = false to disable
+const ENABLE_IDENTIFIER =
+  typeof window.M43_ENABLE_IDENTIFIER === 'boolean'
+    ? window.M43_ENABLE_IDENTIFIER
+    : true
+
+  // =========================================================
+  // CONTACT LOOKUP IDENTIFIER (Salesforce Parity)
+  // Mirrors NVT_Mission43IdentifierService.generate(Contact)
+  // =========================================================
+  const DIACRITIC_MAP = {
+    'à':'a','á':'a','â':'a','ã':'a','ä':'a','å':'a','ā':'a','ă':'a','ą':'a',
+    'æ':'ae','ç':'c','ć':'c','ĉ':'c','ċ':'c','č':'c',
+    'ď':'d','đ':'d',
+    'è':'e','é':'e','ê':'e','ë':'e','ē':'e','ĕ':'e','ė':'e','ę':'e','ě':'e',
+    'ğ':'g','ġ':'g','ģ':'g','ĥ':'h',
+    'ì':'i','í':'i','î':'i','ï':'i','ĩ':'i','ī':'i','ĭ':'i','į':'i','ı':'i',
+    'ñ':'n','ń':'n','ņ':'n','ň':'n',
+    'ò':'o','ó':'o','ô':'o','õ':'o','ö':'o','ø':'o','ō':'o','ŏ':'o','ő':'o',
+    'œ':'oe','ŕ':'r','ŗ':'r','ř':'r',
+    'ś':'s','ŝ':'s','ş':'s','š':'s','ß':'ss',
+    'ţ':'t','ť':'t','ț':'t',
+    'ù':'u','ú':'u','û':'u','ü':'u','ũ':'u','ū':'u','ŭ':'u','ů':'u','ű':'u','ų':'u',
+    'ý':'y','ÿ':'y',
+    'ź':'z','ż':'z','ž':'z',
+    'þ':'th'
+  }
+
+  function stripDiacritics(value) {
+    let result = ''
+    for (let i = 0; i < value.length; i++) {
+      const ch = value.charAt(i)
+      result += DIACRITIC_MAP[ch] || ch
+    }
+    return result
+  }
+
+  function normalizeName(value) {
+    if (!value) return null
+    const normalized = stripDiacritics(value.trim().toLowerCase())
+    return normalized.length ? normalized : null
+  }
+
+  function normalizeLastName(value) {
+    const normalized = normalizeName(value)
+    if (!normalized) return null
+    const cleaned = normalized.replace(/[^a-z0-9]/g, '')
+    return cleaned.length ? cleaned : null
+  }
+
+  function normalizePhoneForIdentifier(input) {
+    const digits = getPhoneDigits(input)
+    return digits && digits.length ? digits : null
+  }
+
+  function buildContactLookupIdentifier(form) {
+    if (!form) return
+
+    const first = form.querySelector('input.calc-fname')
+      const last = form.querySelector('input.calc-lname')
+      const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
+      const lookup = form.querySelector(RESOLVED_CONFIG.selectors.contactLookupIdentifier)
+
+    if (!first || !last || !phone || !lookup) return
+
+    // Ensure lookup field is readonly (prevents user tampering, still submits)
+    if (!lookup.hasAttribute('readonly')) {
+      lookup.setAttribute('readonly', 'readonly')
+    }
+
+    const normalizedFirst = normalizeName(first.value)
+    const normalizedLast = normalizeLastName(last.value)
+    const normalizedPhone = normalizePhoneForIdentifier(phone)
+
+    if (!normalizedFirst || !normalizedLast || !normalizedPhone) {
+      lookup.value = ''
+      return
+    }
+
+    const firstInitial = normalizedFirst.substring(0, 1)
+    lookup.value = firstInitial + normalizedLast + normalizedPhone
+  }
+
+  // =========================================================
+  // FORM NAME AUTO-POPULATION (Builder-Safe)
+  // Populates hidden calc-formName field from .wFormTitle
+  // =========================================================
+  function populateFormName(form) {
+    if (!form) return
+
+    const field = form.querySelector(RESOLVED_CONFIG.selectors.formName)
+    if (!field) return
+
+    const titleEl = document.querySelector(RESOLVED_CONFIG.selectors.formTitle)
+    const title = titleEl ? titleEl.textContent.trim() : ''
+    if (!title) return
+
+    // Prevent user edits but still allow submission
+    if (!field.hasAttribute('readonly')) {
+      field.setAttribute('readonly', 'readonly')
+    }
+
+    field.value = title
+  }
+
   // =========================================================
   // VALUE STATE (UI POLISH)
   // Adds .m43-has-value to inputs/selects/textarea when non-empty
@@ -230,13 +473,14 @@
   }
 
   function validateForm(form) {
+    const __profile = profileStart('validateForm')
     let isValid = true
 
     clearInlineErrors(form)
 
     const summaryMessages = []
 
-    const cfg = getConfig()
+    const cfg = RESOLVED_CONFIG
     debugLog('validateForm called')
 
     const email = form.querySelector(cfg.selectors.email)
@@ -278,7 +522,7 @@
     // ---- PHONE VALIDATION ----
     if (phone) {
       const phoneContainer = phone.closest('.oneField')
-      const digits = digitsOnly(phone.value)
+      const digits = getPhoneDigits(phone)
 
       if (!digits) {
         renderError(phoneContainer, cfg.messages.phoneRequired)
@@ -311,7 +555,7 @@
         }
       }
     }
-
+    profileEnd(__profile)
     return isValid
   }
 
@@ -321,12 +565,14 @@
     const form = input.closest('form')
     if (!form) return true
 
-    const cfg = getConfig()
+    const cfg = RESOLVED_CONFIG
     const email = form.querySelector(cfg.selectors.email)
     const confirm = form.querySelector(cfg.selectors.confirmEmail)
 
     const container = input.closest('.oneField')
     if (!container) return true
+
+    const __profile = profileStart('validateField')
 
     // Only clear this field's container
     container.querySelectorAll('.m43-inline-error').forEach((e) => e.remove())
@@ -369,7 +615,7 @@
 
     // ----- PHONE FIELD -----
     if (input.classList.contains('calc-phone')) {
-      const digits = digitsOnly(input.value)
+      const digits = getPhoneDigits(input)
 
       if (digits && digits.length !== 10) {
         renderError(container, cfg.messages.phoneInvalid)
@@ -377,12 +623,18 @@
       }
     }
 
+    profileEnd(__profile)
     return isValid
   }
 
   function handleSubmit(event) {
+    const __profile = profileStart('handleSubmit')
+
     const form = event.target
-    if (!form || form.tagName !== 'FORM') return
+    if (!form || form.tagName !== 'FORM') {
+      profileEnd(__profile)
+      return
+    }
 
     const valid = validateForm(form)
     debugLog('submit validation result:', valid)
@@ -391,16 +643,24 @@
       event.preventDefault()
       event.stopPropagation()
       event.stopImmediatePropagation()
+      profileEnd(__profile)
       return false
     }
+
+    profileEnd(__profile)
   }
 
   document.addEventListener('submit', handleSubmit, true)
 
   // Initialize value-state styling for all forms on the page
   document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll(getConfig().selectors.form).forEach((f) => {
+    document.querySelectorAll(RESOLVED_CONFIG.selectors.form).forEach((f) => {
       wireHasValueState(f)
+      initPhoneMaskForForm(f)
+      if (ENABLE_IDENTIFIER) {
+  buildContactLookupIdentifier(f)
+}
+      populateFormName(f)
     })
   })
 
@@ -410,6 +670,11 @@
 
     updateHasValueClass(target)
 
+    if (target.classList.contains('calc-phone')) {
+      // In case this phone input was injected dynamically (repeat/conditional)
+      applyPhoneMaskToInput(target)
+    }
+
     if (
       target.classList.contains('calc-email') ||
       target.classList.contains('calc-confirmEmail') ||
@@ -417,11 +682,22 @@
     ) {
       validateField(target)
     }
+
+    if (
+  target.classList.contains('calc-fname') ||
+  target.classList.contains('calc-lname') ||
+  target.classList.contains('calc-phone')
+) {
+  const form = target.closest('form')
+  if (form && ENABLE_IDENTIFIER) {
+    buildContactLookupIdentifier(form)
+  }
+}
   })
 
   document.addEventListener('blur', function (event) {
     const target = event.target
-    if (!target || target.tagName !== 'INPUT') return
+    if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT')) return
 
     updateHasValueClass(target)
 
@@ -439,11 +715,18 @@
      =============================== */
 
   function handleNavClick(event) {
+    const __profile = profileStart('handleNavClick')
     const btn = event.target.closest('.wfPageNextButton')
-    if (!btn) return
+    if (!btn) {
+      profileEnd(__profile)
+      return
+    }
 
     const form = btn.closest('form')
-    if (!form) return
+    if (!form) {
+      profileEnd(__profile)
+      return
+    }
 
     const valid = validateForm(form)
     debugLog('nav validation result:', valid)
@@ -452,8 +735,10 @@
       event.preventDefault()
       event.stopPropagation()
       event.stopImmediatePropagation()
+      profileEnd(__profile)
       return false
     }
+    profileEnd(__profile)
   }
 
   // Capture-phase interception (prevents FA from advancing)
@@ -473,12 +758,16 @@
     const originalRun = wFORMS.behaviors.paging.run
 
     function wrappedPagingRun() {
-      const cfg = getConfig()
-      const form = document.querySelector(cfg.selectors.form)
+      const __profile = profileStart('wrappedPagingRun')
+      const form = document.querySelector(RESOLVED_CONFIG.selectors.form)
       if (form && !validateForm(form)) {
+        profileEnd(__profile)
         return false
       }
-      return originalRun.apply(this, arguments)
+
+      const result = originalRun.apply(this, arguments)
+      profileEnd(__profile)
+      return result
     }
 
     wrappedPagingRun.__m43Wrapped = true
