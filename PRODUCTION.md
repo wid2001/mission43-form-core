@@ -121,10 +121,36 @@ A release is not production until ALL items below pass.
 - Inline errors are connected via `aria-describedby`.
 - Summary uses `role="alert"` and `aria-live`.
 
+
 ### Safety
 
 - No console errors introduced.
 - No global namespace pollution beyond the documented `window.*` flags.
+
+## Salesforce Connector Parity Guarantees
+
+The production build guarantees canonical phone normalization for Salesforce connector parity.
+
+Behavioral contract:
+
+- Phone inputs may be masked for UX (IMask) during entry.
+- On submit, phone values are normalized to **digits-only** (e.g., `2089543891`).
+- Normalization occurs before FormAssembly submission and before connector execution.
+- This ensures parity with Salesforce SOQL lookups that compare raw stored values.
+
+Important notes:
+
+- Salesforce may display formatted values (e.g., `(208) 954-3891` or `208-954-3891`) but internally stores the canonical digits.
+- Connector fallback logic using MobilePhone must assume canonical numeric comparison.
+- UX masking must never alter the canonical value sent to Salesforce.
+
+Any change to phone masking, normalization timing, or connector behavior requires:
+
+1) README update (Salesforce Phone Normalization section)
+2) CHANGELOG entry
+3) Production validation against a real connector lookup
+
+This section defines the connector parity contract and must remain accurate for all future releases.
 
 ## Local Testing
 
