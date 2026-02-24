@@ -170,9 +170,9 @@
   <div>
     <a href="${BASE_URL}/" aria-label="Idaho Outdoor Fieldhouse Home" style="display:flex; align-items:center; margin-left:0;">
       <img
-        src="https://images.squarespace-cdn.com/content/v1/62aa4022b9f1f47a72c06a90/d6ff818f-2fae-4a7d-91f5-7b6b54b15221/IOFH_Logo_Grn.png?format=1500w"
+        src="https://mission43-form-core.pages.dev/assets/fieldhouse/IOFH_Logo_Grn.png"
         alt="The Idaho Outdoor Fieldhouse"
-        style="height:40px; width:auto; display:block;"
+        style="height:42px; width:auto; display:block;"
         loading="eager"
         decoding="async"
       />
