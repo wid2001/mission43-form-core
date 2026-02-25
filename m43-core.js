@@ -6,6 +6,14 @@
 // =========================================================
 ;(function M43CoreStable() {
   // ---------------------------------------------------------
+  // BRAND INITIALIZATION
+  // Applies data-m43-brand attribute to <html>
+  // Enables brand-specific CSS token overrides
+  // ---------------------------------------------------------
+  if (window.M43_FORM_BRAND && document && document.documentElement) {
+    document.documentElement.dataset.m43Brand = window.M43_FORM_BRAND;
+  }
+  // ---------------------------------------------------------
   // DEBUG MODE (optional per-form)
   // Enable by setting: window.M43_DEBUG = true
   // ---------------------------------------------------------
