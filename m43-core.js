@@ -618,8 +618,8 @@ const ENABLE_IDENTIFIER =
 
       // Validate only when there is a value
       if (value && !isValidISODate(value)) {
-        renderError(container, 'Enter a valid calendar date.')
-        summaryMessages.push({ message: 'Enter a valid calendar date.', fieldId: input.id })
+        renderError(container, 'Enter a valid calendar date (format: YYYY-MM-DD).')
+        summaryMessages.push({ message: 'Enter a valid calendar date (format: YYYY-MM-DD).', fieldId: input.id })
         isValid = false
       }
     })
@@ -721,7 +721,7 @@ const ENABLE_IDENTIFIER =
     if (input.type === 'date' || input.classList.contains('validate-date')) {
       const value = (input.value || '').trim()
       if (value && !isValidISODate(value)) {
-        renderError(container, 'Enter a valid calendar date.')
+        renderError(container, 'Enter a valid calendar date (format: YYYY-MM-DD).')
         isValid = false
       }
     }
