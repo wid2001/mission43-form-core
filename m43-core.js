@@ -542,6 +542,25 @@ const ENABLE_IDENTIFIER =
         isValid = false
       }
     }
+     // ---- DATE VALIDATION ----
+const dateInputs = form.querySelectorAll('input[type="date"]')
+dateInputs.forEach((input) => {
+  const container = input.closest('.oneField')
+  const value = input.value
+
+  if (input.hasAttribute('required') && !value) {
+    renderError(container, 'Date is required.')
+    summaryMessages.push({ message: 'Date is required.', fieldId: input.id })
+    isValid = false
+    return
+  }
+
+  if (value && !isValidISODate(value)) {
+    renderError(container, 'Enter a valid calendar date.')
+    summaryMessages.push({ message: 'Enter a valid calendar date.', fieldId: input.id })
+    isValid = false
+  }
+})
 
     if (!isValid) {
       renderSummary(form, summaryMessages)
@@ -631,6 +650,15 @@ const ENABLE_IDENTIFIER =
       }
     }
 
+    // ----- DATE FIELD -----
+if (input.type === 'date') {
+  const value = input.value
+  if (value && !isValidISODate(value)) {
+    renderError(container, 'Enter a valid calendar date.')
+    isValid = false
+  }
+}
+
     profileEnd(__profile)
     return isValid
   }
@@ -696,6 +724,28 @@ const ENABLE_IDENTIFIER =
       }
     })
   }
+
+  // =========================================================
+// STRICT ISO DATE VALIDATION
+// - Ensures YYYY-MM-DD format
+// - Ensures true calendar validity (no Feb 31, etc.)
+// =========================================================
+function isValidISODate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+
+  const parts = value.split('-')
+  const y = parseInt(parts[0], 10)
+  const m = parseInt(parts[1], 10)
+  const d = parseInt(parts[2], 10)
+
+  const dt = new Date(y, m - 1, d)
+
+  return (
+    dt.getFullYear() === y &&
+    dt.getMonth() === m - 1 &&
+    dt.getDate() === d
+  )
+}
 
   function handleSubmit(event) {
     const __profile = profileStart('handleSubmit')
