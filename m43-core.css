@@ -133,6 +133,12 @@ html[data-m43-brand="fieldhouse"] .wFormContainer *:not(.htmlContent):not(.htmlC
   color: var(--m43-text-primary);
 }
 
+html[data-m43-brand="fieldhouse"] body,
+html[data-m43-brand="fieldhouse"] .wFormContainer,
+html[data-m43-brand="fieldhouse"] .wFormContainer * {
+  font-family: var(--m43-font-body) !important;
+}
+
 html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlContent *) {
   font-family: var(--m43-font-body) !important;
   color: var(--m43-text-primary);
