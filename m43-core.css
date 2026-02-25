@@ -92,7 +92,7 @@
 }
 
 /* Fieldhouse Brand Override */
-:root[data-m43-brand="fieldhouse"] {
+html[data-m43-brand="fieldhouse"] {
   --m43-font-body: Poppins, Inter, sans-serif;
   --m43-font-label: Poppins, Inter, sans-serif;
 
