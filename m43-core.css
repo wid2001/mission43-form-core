@@ -128,7 +128,12 @@
    2. GLOBAL TYPOGRAPHY NORMALIZATION
    ========================================================= */
 
-.wFormContainer *:not(.htmlContent):not(.htmlContent *) {
+html[data-m43-brand="fieldhouse"] .wFormContainer *:not(.htmlContent):not(.htmlContent *) {
+  font-family: var(--m43-font-body) !important;
+  color: var(--m43-text-primary);
+}
+
+html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlContent *) {
   font-family: var(--m43-font-body) !important;
   color: var(--m43-text-primary);
 }
