@@ -1,5 +1,3 @@
-
-
 # Mission43 Form Core — Production Governance
 
 This document defines what “production” means for this repository, how releases are created, how builders should consume the assets, and how to roll back safely.
@@ -15,9 +13,11 @@ A version is considered **Production** when:
 
 Production URLs (do not change without a deprecation plan):
 
-- CSS: `https://mission43-form-core.pages.dev/m43-core.css`
-- JS (minified): `https://mission43-form-core.pages.dev/m43-core.min.js`
-- Optional layout helper: `https://mission43-form-core.pages.dev/m43-layout.css`
+- Core CSS: `https://mission43-form-core.pages.dev/m43-core.css`
+- Core JS (minified): `https://mission43-form-core.pages.dev/m43-core.min.js`
+- Layout CSS (header/footer): `https://mission43-form-core.pages.dev/m43-layout.css`
+- Layout JS (header/footer): `https://mission43-form-core.pages.dev/m43-layout.js`
+- Static Assets (logos, etc.): `https://mission43-form-core.pages.dev/assets/...`
 
 ## Builder Contract
 
@@ -28,6 +28,51 @@ Rules:
 - Do not inline-copy the JS/CSS into FormAssembly for production.
 - Do not pin querystring versions unless explicitly instructed.
 - Do not modify the snippet except for `window.M43_FORM_BRAND` and optional overrides.
+
+## Multi-Brand Architecture (v1.3.7+)
+
+As of v1.3.7, the repository supports multiple brands using a token-based architecture.
+
+### Runtime Brand Declaration
+
+Each form must declare its brand before loading core assets:
+
+```html
+<script>
+  window.M43_FORM_BRAND = "mission43"; // or "fieldhouse"
+</script>
+```
+
+### How Brand Switching Works
+
+- JS sets: `html[data-m43-brand="<brand>"]`
+- CSS tokens are defined per brand using:
+  - `html[data-m43-brand="mission43"]`
+  - `html[data-m43-brand="fieldhouse"]`
+
+This ensures:
+
+- Brand isolation (no cross-brand style leakage)
+- Deterministic theme switching
+- Safe coexistence of multiple brands on the same CDN
+
+### Brand Tokens
+
+Each brand defines:
+
+- `--m43-accent`
+- `--m43-accent-dark`
+- `--m43-accent-rgb`
+- `--m43-font-body`
+- `--m43-font-label`
+
+UI refinements (button radius, hover tone, card styling) must always be scoped under:
+
+```css
+html[data-m43-brand="<brand>"] { ... }
+```
+
+Never modify base styles to implement brand differences.
 
 ## Release Process
 
@@ -40,6 +85,7 @@ Rules:
 
 - Use semantic-ish tags: `vX.Y` (e.g., `v2.1`).
 - Patch-only releases may use `vX.Y.Z` when warranted.
+- Multi-brand structural changes require a minor version bump (e.g., v1.4).
 
 ### Required release artifacts
 
@@ -114,6 +160,10 @@ A release is not production until ALL items below pass.
 - Error styling is readable on mobile and desktop.
 - Inputs stack properly on mobile.
 - Conditional/offstate elements remain hidden.
+- Correct brand tokens applied:
+  - `document.documentElement.dataset.m43Brand` matches expected brand
+  - `--m43-accent` resolves correctly in computed styles
+  - Brand-specific font renders as expected
 
 ### Accessibility
 
@@ -216,3 +266,10 @@ If production URLs must change:
 - Code owners: Mission43 engineering (repository maintainers)
 - Builders: follow `docs/INJECTION.md`
 - Production status is declared only via `CHANGELOG.md` entry + Git tag.
+
+## Brand Governance Notes
+
+- Fieldhouse brand uses accent `#E64C38` (orange tone per official guide).
+- Mission43 brand remains unchanged and must not regress.
+- Brand logic must never rely on load order alone; selector specificity must guarantee override behavior.
+- All brand changes must be validated against both Mission43 and Fieldhouse forms before release.
