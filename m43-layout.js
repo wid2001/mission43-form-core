@@ -19,11 +19,27 @@
     return;
   }
 
-  const DEFAULT_BASE_URL = BRAND === "mission43"
-    ? "https://www.mission43.org"
-    : "https://www.idahofieldhouse.org";
+  const BRAND_CONFIG = {
+    mission43: {
+      baseUrl: "https://www.mission43.org",
+      accent: "#f02f4e",
+      fontFamily: '"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+    },
+    fieldhouse: {
+      baseUrl: "https://www.idahofieldhouse.org",
+      accent: "#0E2F22",
+      fontFamily: '"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+    }
+  };
 
-  const BASE_URL = (window.M43_FORM_BASE_URL || DEFAULT_BASE_URL).toString().trim().replace(/\/$/, "");
+  const ACTIVE_BRAND = BRAND_CONFIG[BRAND];
+
+  if (!ACTIVE_BRAND) return;
+
+  const BASE_URL = (window.M43_FORM_BASE_URL || ACTIVE_BRAND.baseUrl)
+    .toString()
+    .trim()
+    .replace(/\/$/, "");
 
   // ---- CSS (centralized) ----
   function injectCssOnce() {
@@ -32,12 +48,12 @@
     const css = `
 /* ===== mission43-form-core (FormAssembly) ===== */
 :root {
-  --m43-font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --m43-font-family: ${ACTIVE_BRAND.fontFamily};
   --m43-text: #171717;
   --m43-muted: #666666;
   --m43-border: #e6e6e6;
   --m43-surface: #ffffff;
-  --m43-accent: ${BRAND === "mission43" ? "#f02f4e" : "#1F6B3A"};
+  --m43-accent: ${ACTIVE_BRAND.accent};
 }
 
 /* Space so the injected header doesn't feel glued to the form */
