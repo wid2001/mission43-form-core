@@ -16,23 +16,23 @@ body,
 ========================================= */
 
 :root {
-  /* Brand tokens */
-  --m43-red: #d41636;
-  --m43-red-press: #f02f4e;
-  --m43-ink: #171717;
-  --m43-muted: #a1a1a1;
-  --m43-surface: #e6e4e1;
-  --m43-surface-focus: #eeeeee;
-  --m43-radius: 10px;
-  --m43-font: "Inter Variable", Inter, sans-serif;
+  /* Brand-agnostic tokens (values overridden by JS per brand) */
+  --brand-accent: #d41636;
+  --brand-accent-press: #f02f4e;
+  --brand-ink: #171717;
+  --brand-muted: #a1a1a1;
+  --brand-surface: #e6e4e1;
+  --brand-surface-focus: #eeeeee;
+  --brand-radius: 10px;
+  --brand-font: "Inter Variable", Inter, sans-serif;
 }
 
 /* ---------- Labels ---------- */
 .wForm .label,
 .wForm label,
 .wFormContainer label {
-  font-family: var(--m43-font);
-  color: var(--m43-ink);
+  font-family: var(--brand-font);
+  color: var(--brand-ink);
   font-weight: 500;
   font-size: 12px;
   line-height: 1.2;
@@ -47,20 +47,20 @@ body,
 .wForm input[type="password"],
 .wForm select,
 .wForm textarea {
-  font-family: var(--m43-font) !important;
+  font-family: var(--brand-font) !important;
   font-size: 16px;
   line-height: 1.2;
-  color: var(--m43-ink);
-  background: var(--m43-surface);
+  color: var(--brand-ink);
+  background: var(--brand-surface);
   border: 1px solid transparent;
-  border-radius: var(--m43-radius);
+  border-radius: var(--brand-radius);
   padding: 12px;
   box-sizing: border-box;
 }
 
 .wForm input::placeholder,
 .wForm textarea::placeholder {
-  color: var(--m43-muted);
+  color: var(--brand-muted);
 }
 
 .wForm input[type="text"]:focus,
@@ -71,10 +71,10 @@ body,
 .wForm input[type="password"]:focus,
 .wForm select:focus,
 .wForm textarea:focus {
-  background: var(--m43-surface-focus);
+  background: var(--brand-surface-focus);
   outline: none;
-  border-color: rgba(240, 47, 78, 0.45);
-  box-shadow: 0 0 0 3px rgba(240, 47, 78, 0.18);
+  border-color: rgba(212, 22, 54, 0.45);
+  box-shadow: 0 0 0 3px rgba(212, 22, 54, 0.18);
 }
 
 /* ---------- Primary buttons (Submit / Next / Previous) ---------- */
@@ -87,8 +87,8 @@ body,
 .wForm button,
 .wForm .primaryAction,
 .wForm .secondaryAction {
-  font-family: var(--m43-font) !important;
-  border-radius: var(--m43-radius);
+  font-family: var(--brand-font) !important;
+  border-radius: var(--brand-radius);
   height: 40px;
   min-height: 40px;
   padding: 0 18px;
@@ -106,7 +106,7 @@ body,
 .wForm .primaryAction,
 .wForm button.primaryAction,
 .wForm button[type="submit"] {
-  background: var(--m43-red);
+  background: var(--brand-accent);
   color: #ffffff !important;
   border: 1px solid transparent;
   font-weight: 500;
@@ -119,7 +119,7 @@ body,
 .wForm .primaryAction:hover,
 .wForm button.primaryAction:hover,
 .wForm button[type="submit"]:hover {
-  background: var(--m43-red-press);
+  background: var(--brand-accent-press);
 }
 
 .wForm input[type="submit"]:active,
@@ -134,7 +134,7 @@ body,
 .wForm button.primaryAction:focus,
 .wForm button[type="submit"]:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(240, 47, 78, 0.22);
+  box-shadow: 0 0 0 3px rgba(212, 22, 54, 0.22);
 }
 
 /* Secondary (e.g., Previous) */
@@ -142,7 +142,7 @@ body,
 .wForm input[type="button"].secondaryAction,
 .wForm button.secondaryAction {
   background: transparent;
-  color: var(--m43-ink) !important;
+  color: var(--brand-ink) !important;
   border: 1px solid rgba(23, 23, 23, 0.18);
   font-weight: 500;
   font-size: 14px;
@@ -170,8 +170,8 @@ body,
 .wForm .errMsg,
 .wForm .errorMsg,
 .wForm .errorMessage {
-  font-family: var(--m43-font);
-  color: var(--m43-red-press);
+  font-family: var(--brand-font);
+  color: var(--brand-accent-press);
   font-size: 13px;
   line-height: 1.35;
   margin-top: 8px;
@@ -183,8 +183,8 @@ body,
 .wForm .errFld input,
 .wForm .errFld select,
 .wForm .errFld textarea {
-  border-color: rgba(240, 47, 78, 0.65) !important;
-  box-shadow: 0 0 0 3px rgba(240, 47, 78, 0.14) !important;
+  border-color: rgba(212, 22, 54, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(212, 22, 54, 0.14) !important;
 }
 
 /* ---------- Subtle interaction smoothing ---------- */
@@ -237,7 +237,7 @@ body,
 }
 
 .fa-global-header a:hover {
-  color: #f02f4e;
+  color: var(--brand-accent-press);
 }
 
 /* ================= FOOTER ================= */
@@ -259,7 +259,7 @@ body,
 }
 
 .fa-global-footer a:hover {
-  color: #f02f4e;
+  color: var(--brand-accent-press);
 }
 
 .fa-global-footer .footer-inner {

@@ -1,5 +1,3 @@
-
-
 /* mission43-form-core: centralized FormAssembly layout (header/footer + base styles)
    - Requires: window.M43_FORM_BRAND = "mission43" | "fieldhouse"
    - Optional: window.M43_FORM_BASE_URL = "https://www.mission43.org" (defaults per brand)
@@ -33,8 +31,12 @@
   };
 
   const ACTIVE_BRAND = BRAND_CONFIG[BRAND];
-
   if (!ACTIVE_BRAND) return;
+
+  // ---- Sync brand tokens for external layout.css ----
+  document.documentElement.style.setProperty('--brand-accent', ACTIVE_BRAND.accent);
+  document.documentElement.style.setProperty('--brand-accent-press', ACTIVE_BRAND.accent);
+  document.documentElement.style.setProperty('--brand-font', ACTIVE_BRAND.fontFamily);
 
   const BASE_URL = (window.M43_FORM_BASE_URL || ACTIVE_BRAND.baseUrl)
     .toString()
@@ -48,12 +50,8 @@
     const css = `
 /* ===== mission43-form-core (FormAssembly) ===== */
 :root {
-  --m43-font-family: ${ACTIVE_BRAND.fontFamily};
-  --m43-text: #171717;
-  --m43-muted: #666666;
-  --m43-border: #e6e6e6;
-  --m43-surface: #ffffff;
-  --m43-accent: ${ACTIVE_BRAND.accent};
+  --brand-font: ${ACTIVE_BRAND.fontFamily};
+  --brand-accent: ${ACTIVE_BRAND.accent};
 }
 
 /* Space so the injected header doesn't feel glued to the form */
@@ -63,7 +61,7 @@
   background: var(--m43-surface);
   border-bottom: 1px solid var(--m43-border);
   padding: 24px 60px;
-  font-family: var(--m43-font-family);
+  font-family: var(--brand-font);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -81,13 +79,13 @@
   color: #111111;
 }
 
-.m43-global-header a:hover { color: var(--m43-accent); }
+.m43-global-header a:hover { color: var(--brand-accent); }
 
 .m43-global-footer {
   background: var(--m43-surface);
   padding: 60px 0;
   font-size: 14px;
-  font-family: var(--m43-font-family);
+  font-family: var(--brand-font);
   border-top: 1px solid var(--m43-border);
   margin-top: 80px;
 }
@@ -99,7 +97,7 @@
   font-weight: 500;
 }
 
-.m43-global-footer a:hover { color: var(--m43-accent); }
+.m43-global-footer a:hover { color: var(--brand-accent); }
 
 /* Make header/footer padding less aggressive on mobile */
 @media (max-width: 720px) {
