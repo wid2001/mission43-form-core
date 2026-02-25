@@ -101,6 +101,29 @@ html[data-m43-brand="fieldhouse"] {
   --m43-accent-rgb: 230, 76, 56;
 }
 
+/* ---------------------------------------------------------
+   Fieldhouse Visual Refinements
+   - Slightly softer buttons
+   - Warmer hover tone
+   - Softer card borders
+   --------------------------------------------------------- */
+
+html[data-m43-brand="fieldhouse"] .wFormContainer .actions input[type="submit"],
+html[data-m43-brand="fieldhouse"] .wFormContainer .wfPagingButtons input {
+  border-radius: 12px !important; /* Softer than Mission43 */
+  font-weight: 600 !important;     /* Slightly stronger presence */
+}
+
+html[data-m43-brand="fieldhouse"] .wFormContainer .actions input[type="submit"]:hover,
+html[data-m43-brand="fieldhouse"] .wFormContainer .wfPagingButtons input:hover {
+  background: #D94A36 !important; /* Slightly warmer hover */
+}
+
+html[data-m43-brand="fieldhouse"] .wForm .choices .oneChoice label.postField {
+  border: 1px solid rgba(23,23,23,.18) !important; /* Softer than default */
+  box-shadow: 0 2px 8px rgba(0,0,0,.03);
+}
+
 /* =========================================================
    10. AUTOFILL NORMALIZATION (Chrome / Safari)
    Removes browser blue autofill and keeps brand fill
