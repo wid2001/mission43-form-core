@@ -1,8 +1,14 @@
-/* mission43-form-core: centralized FormAssembly layout (header/footer + base styles)
+/* =========================================================
+   Mission43 Form Layout System
+   Version: 1.3.7
+   Status: Production Locked
+   Last Audit: 2026-02 (Brand Architecture Alignment)
+   ---------------------------------------------------------
+   Centralized FormAssembly layout (header/footer + base styles)
    - Requires: window.M43_FORM_BRAND = "mission43" | "fieldhouse"
-   - Optional: window.M43_FORM_BASE_URL = "https://www.mission43.org" (defaults per brand)
+   - Optional: window.M43_FORM_BASE_URL override
    - Behavior: If brand missing/unknown -> render nothing.
-*/
+========================================================= */
 
 (function () {
   "use strict";

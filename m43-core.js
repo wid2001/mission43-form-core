@@ -1,8 +1,8 @@
 // =========================================================
-// M43 Core v2.0
+// M43 Core v1.3.7
 // Enterprise Hybrid Validation Engine
-// Status: Stable
-// Locked: 2026-02
+// Status: Production Locked
+// Locked: 2026-02 (Brand Architecture Update)
 // =========================================================
 ;(function M43CoreStable() {
   // ---------------------------------------------------------
