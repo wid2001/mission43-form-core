@@ -480,6 +480,61 @@ const ENABLE_IDENTIFIER =
     })
   }
 
+  // =========================================================
+  // VISIBILITY / PAGING AWARE VALIDATION
+  // - Only validate fields on the active wForms page (.wfCurrentPage)
+  // - Prevents blocking Next when required fields are on later pages
+  // - Falls back to visibility if paging wrappers are not present
+  // =========================================================
+  function isElementVisible(el) {
+    if (!el) return false
+    if (el.disabled) return false
+
+    const type = (el.getAttribute && (el.getAttribute('type') || '').toLowerCase()) || ''
+    if (type === 'hidden') return false
+
+    const style = window.getComputedStyle(el)
+    if (style.display === 'none' || style.visibility === 'hidden') return false
+
+    // Covers display:none parents and detached nodes
+    if (el.offsetParent === null && style.position !== 'fixed') return false
+
+    // Covers elements with no rendered boxes
+    if (el.getClientRects && el.getClientRects().length === 0) return false
+
+    return true
+  }
+
+  function getActivePageScope(form) {
+    if (!form) return null
+    const current = form.querySelector('.wfPage.wfCurrentPage')
+    return current || form
+  }
+
+  function isFieldOnActivePage(el, form) {
+    if (!el) return false
+
+    const page = el.closest && el.closest('.wfPage')
+    if (!page) {
+      // Not a paged form (or no wfPage wrappers)
+      return true
+    }
+
+    // If wForms marks the active page, require it
+    if (page.classList && page.classList.contains('wfCurrentPage')) return true
+
+    // If wfPage exists but wfCurrentPage is missing (edge cases),
+    // fall back to visibility to avoid over-blocking.
+    const active = getActivePageScope(form)
+    if (active === form) return true
+
+    return false
+  }
+
+  function shouldValidateField(el, form) {
+    return isElementVisible(el) && isFieldOnActivePage(el, form)
+  }
+
   function validateForm(form) {
     const __profile = profileStart('validateForm')
     let isValid = true
@@ -491,12 +546,14 @@ const ENABLE_IDENTIFIER =
     const cfg = RESOLVED_CONFIG
     debugLog('validateForm called')
 
-    const email = form.querySelector(cfg.selectors.email)
-    const confirm = form.querySelector(cfg.selectors.confirmEmail)
-    const phone = form.querySelector(cfg.selectors.phone)
+    const activeScope = getActivePageScope(form)
+
+    const email = activeScope.querySelector(cfg.selectors.email)
+    const confirm = activeScope.querySelector(cfg.selectors.confirmEmail)
+    const phone = activeScope.querySelector(cfg.selectors.phone)
 
     // ---- EMAIL VALIDATION ----
-    if (email) {
+    if (email && shouldValidateField(email, form)) {
       const emailContainer = email.closest('.oneField')
       const value = (email.value || '').trim()
 
@@ -511,7 +568,7 @@ const ENABLE_IDENTIFIER =
       }
     }
 
-    if (confirm) {
+    if (confirm && shouldValidateField(confirm, form)) {
       const confirmContainer = confirm.closest('.oneField')
       const v1 = email ? (email.value || '').trim().toLowerCase() : ''
       const v2 = (confirm.value || '').trim().toLowerCase()
@@ -528,7 +585,7 @@ const ENABLE_IDENTIFIER =
     }
 
     // ---- PHONE VALIDATION ----
-    if (phone) {
+    if (phone && shouldValidateField(phone, form)) {
       const phoneContainer = phone.closest('.oneField')
       const digits = getPhoneDigits(phone)
 
@@ -542,25 +599,30 @@ const ENABLE_IDENTIFIER =
         isValid = false
       }
     }
-     // ---- DATE VALIDATION ----
-const dateInputs = form.querySelectorAll('input[type="date"]')
-dateInputs.forEach((input) => {
-  const container = input.closest('.oneField')
-  const value = input.value
 
-  if (input.hasAttribute('required') && !value) {
-    renderError(container, 'Date is required.')
-    summaryMessages.push({ message: 'Date is required.', fieldId: input.id })
-    isValid = false
-    return
-  }
+    // ---- DATE VALIDATION ----
+    // FormAssembly often uses input[type="text"].validate-date rather than input[type="date"]
+    const dateInputs = activeScope.querySelectorAll('input[type="date"], input.validate-date')
+    dateInputs.forEach((input) => {
+      if (!shouldValidateField(input, form)) return
 
-  if (value && !isValidISODate(value)) {
-    renderError(container, 'Enter a valid calendar date.')
-    summaryMessages.push({ message: 'Enter a valid calendar date.', fieldId: input.id })
-    isValid = false
-  }
-})
+      const container = input.closest('.oneField')
+      const value = (input.value || '').trim()
+
+      if (input.hasAttribute('required') && !value) {
+        renderError(container, 'Date is required.')
+        summaryMessages.push({ message: 'Date is required.', fieldId: input.id })
+        isValid = false
+        return
+      }
+
+      // Validate only when there is a value
+      if (value && !isValidISODate(value)) {
+        renderError(container, 'Enter a valid calendar date.')
+        summaryMessages.push({ message: 'Enter a valid calendar date.', fieldId: input.id })
+        isValid = false
+      }
+    })
 
     if (!isValid) {
       renderSummary(form, summaryMessages)
@@ -591,6 +653,11 @@ dateInputs.forEach((input) => {
 
     const form = input.closest('form')
     if (!form) return true
+
+    // Do not validate fields on non-active pages (prevents blocking Next)
+    if (!shouldValidateField(input, form)) {
+      return true
+    }
 
     const cfg = RESOLVED_CONFIG
     const email = form.querySelector(cfg.selectors.email)
@@ -651,13 +718,13 @@ dateInputs.forEach((input) => {
     }
 
     // ----- DATE FIELD -----
-if (input.type === 'date') {
-  const value = input.value
-  if (value && !isValidISODate(value)) {
-    renderError(container, 'Enter a valid calendar date.')
-    isValid = false
-  }
-}
+    if (input.type === 'date' || input.classList.contains('validate-date')) {
+      const value = (input.value || '').trim()
+      if (value && !isValidISODate(value)) {
+        renderError(container, 'Enter a valid calendar date.')
+        isValid = false
+      }
+    }
 
     profileEnd(__profile)
     return isValid
@@ -688,11 +755,11 @@ if (input.type === 'date') {
   // =========================================================
   function standardizeDateInputs(form) {
     if (!form) return
-    const dateInputs = form.querySelectorAll('input[type="date"]')
+    const dateInputs = form.querySelectorAll('input[type="date"], input.validate-date')
 
     dateInputs.forEach((input) => {
-      // Set historical minimum if not explicitly defined
-      if (!input.min) {
+      // Only applies to native date inputs
+      if (input.type === 'date' && !input.min) {
         input.min = '1900-01-01'
       }
 
@@ -711,7 +778,7 @@ if (input.type === 'date') {
 
   function normalizeDatesForSubmission(form) {
     if (!form) return
-    const dateInputs = form.querySelectorAll('input[type="date"]')
+    const dateInputs = form.querySelectorAll('input[type="date"], input.validate-date')
 
     dateInputs.forEach((input) => {
       if (!input.value) return
@@ -801,21 +868,23 @@ function isValidISODate(value) {
     if (
       target.classList.contains('calc-email') ||
       target.classList.contains('calc-confirmEmail') ||
-      target.classList.contains('calc-phone')
+      target.classList.contains('calc-phone') ||
+      target.type === 'date' ||
+      target.classList.contains('validate-date')
     ) {
       validateField(target)
     }
 
     if (
-  target.classList.contains('calc-fname') ||
-  target.classList.contains('calc-lname') ||
-  target.classList.contains('calc-phone')
-) {
-  const form = target.closest('form')
-  if (form && ENABLE_IDENTIFIER) {
-    buildContactLookupIdentifier(form)
-  }
-}
+      target.classList.contains('calc-fname') ||
+      target.classList.contains('calc-lname') ||
+      target.classList.contains('calc-phone')
+    ) {
+      const form = target.closest('form')
+      if (form && ENABLE_IDENTIFIER) {
+        buildContactLookupIdentifier(form)
+      }
+    }
   })
 
   document.addEventListener('blur', function (event) {
@@ -827,7 +896,9 @@ function isValidISODate(value) {
     if (
       target.classList.contains('calc-email') ||
       target.classList.contains('calc-confirmEmail') ||
-      target.classList.contains('calc-phone')
+      target.classList.contains('calc-phone') ||
+      target.type === 'date' ||
+      target.classList.contains('validate-date')
     ) {
       validateField(target)
     }
