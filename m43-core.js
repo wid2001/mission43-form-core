@@ -651,6 +651,52 @@ const ENABLE_IDENTIFIER =
     }
   }
 
+    // =========================================================
+  // DATE STANDARDIZATION (Neutral, Salesforce-Safe)
+  // - Applies to all input[type="date"]
+  // - Enforces ISO format (YYYY-MM-DD)
+  // - Sets sane default minimum (1900-01-01) if not defined
+  // - No future/past restrictions (declarative expansion later)
+  // =========================================================
+  function standardizeDateInputs(form) {
+    if (!form) return
+    const dateInputs = form.querySelectorAll('input[type="date"]')
+
+    dateInputs.forEach((input) => {
+      // Set historical minimum if not explicitly defined
+      if (!input.min) {
+        input.min = '1900-01-01'
+      }
+
+      // Normalize existing value
+      if (input.value) {
+        const parts = input.value.split('-')
+        if (parts.length === 3) {
+          const [y, m, d] = parts
+          if (y && m && d) {
+            input.value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
+          }
+        }
+      }
+    })
+  }
+
+  function normalizeDatesForSubmission(form) {
+    if (!form) return
+    const dateInputs = form.querySelectorAll('input[type="date"]')
+
+    dateInputs.forEach((input) => {
+      if (!input.value) return
+      const parts = input.value.split('-')
+      if (parts.length === 3) {
+        const [y, m, d] = parts
+        if (y && m && d) {
+          input.value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
+        }
+      }
+    })
+  }
+
   function handleSubmit(event) {
     const __profile = profileStart('handleSubmit')
 
@@ -662,6 +708,7 @@ const ENABLE_IDENTIFIER =
 
     const valid = validateForm(form)
     normalizePhoneForSubmission(form)
+    normalizeDatesForSubmission(form)
     debugLog('submit validation result:', valid)
 
     if (!valid) {
@@ -682,6 +729,7 @@ const ENABLE_IDENTIFIER =
     document.querySelectorAll(RESOLVED_CONFIG.selectors.form).forEach((f) => {
       wireHasValueState(f)
       initPhoneMaskForForm(f)
+      standardizeDateInputs(f)
       if (ENABLE_IDENTIFIER) {
   buildContactLookupIdentifier(f)
 }
@@ -754,6 +802,7 @@ const ENABLE_IDENTIFIER =
     }
 
     normalizePhoneForSubmission(form)
+    normalizeDatesForSubmission(form)
 
     const valid = validateForm(form)
     debugLog('nav validation result:', valid)
@@ -788,6 +837,7 @@ const ENABLE_IDENTIFIER =
       const __profile = profileStart('wrappedPagingRun')
       const form = document.querySelector(RESOLVED_CONFIG.selectors.form)
       if (form) normalizePhoneForSubmission(form)
+      if (form) normalizeDatesForSubmission(form)
       if (form && !validateForm(form)) {
         profileEnd(__profile)
         return false
