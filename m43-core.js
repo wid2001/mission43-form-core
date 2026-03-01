@@ -152,6 +152,7 @@
       email: 'input.calc-email',
       confirmEmail: 'input.calc-confirmEmail',
       phone: 'input.calc-phone',
+      identifierPhone: 'input.calc-phone',
       contactLookupIdentifier: 'input.calc-contactLookupIdentifier',
       formName: 'input.calc-formName',
       formTitle: '.wFormTitle',
@@ -398,9 +399,9 @@ const ENABLE_IDENTIFIER =
     if (!form) return
 
     const first = form.querySelector('input.calc-fname')
-      const last = form.querySelector('input.calc-lname')
-      const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
-      const lookup = form.querySelector(RESOLVED_CONFIG.selectors.contactLookupIdentifier)
+    const last = form.querySelector('input.calc-lname')
+    const phone = form.querySelector(RESOLVED_CONFIG.selectors.identifierPhone)
+    const lookup = form.querySelector(RESOLVED_CONFIG.selectors.contactLookupIdentifier)
 
     if (!first || !last || !phone || !lookup) return
 
@@ -550,7 +551,7 @@ const ENABLE_IDENTIFIER =
 
     const email = activeScope.querySelector(cfg.selectors.email)
     const confirm = activeScope.querySelector(cfg.selectors.confirmEmail)
-    const phone = activeScope.querySelector(cfg.selectors.phone)
+    const phones = activeScope.querySelectorAll(cfg.selectors.phone)
 
     // ---- EMAIL VALIDATION ----
     if (email && shouldValidateField(email, form)) {
@@ -585,19 +586,23 @@ const ENABLE_IDENTIFIER =
     }
 
     // ---- PHONE VALIDATION ----
-    if (phone && shouldValidateField(phone, form)) {
-      const phoneContainer = phone.closest('.oneField')
-      const digits = getPhoneDigits(phone)
+    if (phones && phones.length) {
+      phones.forEach((phone) => {
+        if (!shouldValidateField(phone, form)) return
 
-      if (!digits) {
-        renderError(phoneContainer, cfg.messages.phoneRequired)
-        summaryMessages.push({ message: cfg.messages.phoneRequired, fieldId: phone.id })
-        isValid = false
-      } else if (digits.length !== 10) {
-        renderError(phoneContainer, cfg.messages.phoneInvalid)
-        summaryMessages.push({ message: cfg.messages.phoneInvalid, fieldId: phone.id })
-        isValid = false
-      }
+        const phoneContainer = phone.closest('.oneField')
+        const digits = getPhoneDigits(phone)
+
+        if (!digits) {
+          renderError(phoneContainer, cfg.messages.phoneRequired)
+          summaryMessages.push({ message: cfg.messages.phoneRequired, fieldId: phone.id })
+          isValid = false
+        } else if (digits.length !== 10) {
+          renderError(phoneContainer, cfg.messages.phoneInvalid)
+          summaryMessages.push({ message: cfg.messages.phoneInvalid, fieldId: phone.id })
+          isValid = false
+        }
+      })
     }
 
     // ---- DATE VALIDATION ----
@@ -711,7 +716,10 @@ const ENABLE_IDENTIFIER =
     if (input.classList.contains('calc-phone')) {
       const digits = getPhoneDigits(input)
 
-      if (digits && digits.length !== 10) {
+      if (!digits) {
+        renderError(container, cfg.messages.phoneRequired)
+        isValid = false
+      } else if (digits.length !== 10) {
         renderError(container, cfg.messages.phoneInvalid)
         isValid = false
       }
@@ -737,13 +745,15 @@ const ENABLE_IDENTIFIER =
   // =========================================================
   function normalizePhoneForSubmission(form) {
     if (!form) return
-    const phone = form.querySelector(RESOLVED_CONFIG.selectors.phone)
-    if (!phone) return
+    const phones = form.querySelectorAll(RESOLVED_CONFIG.selectors.phone)
+    if (!phones || !phones.length) return
 
-    const digits = getPhoneDigits(phone)
-    if (digits && phone.value !== digits) {
-      phone.value = digits
-    }
+    phones.forEach((phone) => {
+      const digits = getPhoneDigits(phone)
+      if (digits && phone.value !== digits) {
+        phone.value = digits
+      }
+    })
   }
 
     // =========================================================
