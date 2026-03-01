@@ -151,7 +151,7 @@
       form: 'form',
       email: 'input.calc-email',
       confirmEmail: 'input.calc-confirmEmail',
-      phone: 'input.calc-phone',
+      phone: 'input[class*="calc-phone"]',
       identifierPhone: 'input.calc-phone',
       contactLookupIdentifier: 'input.calc-contactLookupIdentifier',
       formName: 'input.calc-formName',
