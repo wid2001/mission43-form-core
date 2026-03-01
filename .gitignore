@@ -52,3 +52,4 @@ Results/
 # NOTE:
 # The core source files (JS, CSS, docs) are intentionally NOT ignored.
 # This project stores only production assets and documentation in Git.
+.sfdx/
