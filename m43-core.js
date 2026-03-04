@@ -622,9 +622,9 @@ const ENABLE_IDENTIFIER =
       }
 
       // Validate only when there is a value
-      if (value && !isValidISODate(value)) {
-        renderError(container, 'Enter a valid calendar date (format: YYYY-MM-DD).')
-        summaryMessages.push({ message: 'Enter a valid calendar date (format: YYYY-MM-DD).', fieldId: input.id })
+      if (value && !isValidMDYDate(value)) {
+        renderError(container, 'Enter a valid calendar date (format: MM-DD-YYYY).')
+        summaryMessages.push({ message: 'Enter a valid calendar date (format: MM-DD-YYYY).', fieldId: input.id })
         isValid = false
       }
     })
@@ -728,8 +728,8 @@ const ENABLE_IDENTIFIER =
     // ----- DATE FIELD -----
     if (input.type === 'date' || input.classList.contains('validate-date')) {
       const value = (input.value || '').trim()
-      if (value && !isValidISODate(value)) {
-        renderError(container, 'Enter a valid calendar date (format: YYYY-MM-DD).')
+      if (value && !isValidMDYDate(value)) {
+        renderError(container, 'Enter a valid calendar date (format: MM-DD-YYYY).')
         isValid = false
       }
     }
@@ -759,8 +759,8 @@ const ENABLE_IDENTIFIER =
     // =========================================================
   // DATE STANDARDIZATION (Neutral, Salesforce-Safe)
   // - Applies to all input[type="date"]
-  // - Enforces ISO format (YYYY-MM-DD)
-  // - Sets sane default minimum (1900-01-01) if not defined
+  // - Enforces MM-DD-YYYY format
+  // - Disables native date picker (always text input)
   // - No future/past restrictions (declarative expansion later)
   // =========================================================
   function standardizeDateInputs(form) {
@@ -768,20 +768,34 @@ const ENABLE_IDENTIFIER =
     const dateInputs = form.querySelectorAll('input[type="date"], input.validate-date')
 
     dateInputs.forEach((input) => {
-      // Only applies to native date inputs
-      if (input.type === 'date' && !input.min) {
-        input.min = '1900-01-01'
+      if (!input) return
+
+      // Disable native date picker: force text input while keeping existing validation engine.
+      if (input.type === 'date') {
+        try {
+          input.setAttribute('type', 'text')
+        } catch (_) {}
       }
 
-      // Normalize existing value
+      // Ensure the engine continues to treat this as a date field after type coercion.
+      if (!input.classList.contains('validate-date')) {
+        input.classList.add('validate-date')
+      }
+
+      // Mobile keypad hint (does not introduce a picker)
+      if (!input.getAttribute('inputmode')) {
+        input.setAttribute('inputmode', 'numeric')
+      }
+
+      // UX hint (safe)
+      if (!input.getAttribute('placeholder')) {
+        input.setAttribute('placeholder', 'MM-DD-YYYY')
+      }
+
+      // Normalize existing value to MM-DD-YYYY
       if (input.value) {
-        const parts = input.value.split('-')
-        if (parts.length === 3) {
-          const [y, m, d] = parts
-          if (y && m && d) {
-            input.value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
-          }
-        }
+        const normalized = normalizeDateToMDY(input.value)
+        if (normalized) input.value = normalized
       }
     })
   }
@@ -791,37 +805,60 @@ const ENABLE_IDENTIFIER =
     const dateInputs = form.querySelectorAll('input[type="date"], input.validate-date')
 
     dateInputs.forEach((input) => {
-      if (!input.value) return
-      const parts = input.value.split('-')
-      if (parts.length === 3) {
-        const [y, m, d] = parts
-        if (y && m && d) {
-          input.value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
-        }
-      }
+      if (!input || !input.value) return
+      const normalized = normalizeDateToMDY(input.value)
+      if (normalized) input.value = normalized
     })
   }
 
   // =========================================================
-// STRICT ISO DATE VALIDATION
-// - Ensures YYYY-MM-DD format
+// STRICT MDY DATE VALIDATION + NORMALIZATION
+// - Enforces MM-DD-YYYY format
 // - Ensures true calendar validity (no Feb 31, etc.)
+// - Normalizer accepts common separators and pads M/D
+//   but always outputs MM-DD-YYYY.
 // =========================================================
-function isValidISODate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+function normalizeDateToMDY(raw) {
+  const v = (raw || '').toString().trim()
+  if (!v) return ''
 
-  const parts = value.split('-')
-  const y = parseInt(parts[0], 10)
-  const m = parseInt(parts[1], 10)
-  const d = parseInt(parts[2], 10)
+  // Accept common separators; standardize to '-'
+  const cleaned = v.replace(/\s+/g, '').replace(/\//g, '-').replace(/\./g, '-')
+  const parts = cleaned.split('-')
+  if (parts.length !== 3) return ''
+
+  let mm = parts[0]
+  let dd = parts[1]
+  let yyyy = parts[2]
+
+  // If user pasted ISO (YYYY-MM-DD), detect and convert
+  if (/^\d{4}$/.test(parts[0]) && /^\d{1,2}$/.test(parts[1]) && /^\d{1,2}$/.test(parts[2])) {
+    yyyy = parts[0]
+    mm = parts[1]
+    dd = parts[2]
+  }
+
+  if (!/^\d{1,2}$/.test(mm) || !/^\d{1,2}$/.test(dd) || !/^\d{4}$/.test(yyyy)) return ''
+
+  const m = parseInt(mm, 10)
+  const d = parseInt(dd, 10)
+  const y = parseInt(yyyy, 10)
+
+  if (y < 1000 || y > 9999) return ''
+  if (m < 1 || m > 12) return ''
+  if (d < 1 || d > 31) return ''
 
   const dt = new Date(y, m - 1, d)
+  const isReal = dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d
+  if (!isReal) return ''
 
-  return (
-    dt.getFullYear() === y &&
-    dt.getMonth() === m - 1 &&
-    dt.getDate() === d
-  )
+  return `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}-${String(y)}`
+}
+
+function isValidMDYDate(value) {
+  const normalized = normalizeDateToMDY(value)
+  if (!normalized) return false
+  return /^\d{2}-\d{2}-\d{4}$/.test(normalized)
 }
 
   function handleSubmit(event) {
@@ -910,6 +947,11 @@ function isValidISODate(value) {
       target.type === 'date' ||
       target.classList.contains('validate-date')
     ) {
+      // Phone-like UX: normalize date to MM-DD-YYYY on blur when valid
+      if (target.type === 'date' || target.classList.contains('validate-date')) {
+        const normalized = normalizeDateToMDY(target.value)
+        if (normalized) target.value = normalized
+      }
       validateField(target)
     }
   }, true)
