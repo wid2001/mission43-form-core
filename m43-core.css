@@ -69,22 +69,22 @@
    ========================================================= */
 
 :root {
-  --m43-red: #D41636;
-  --m43-red-dark: #F02F4E;
+  --m43-red: #d41636;
+  --m43-red-dark: #f02f4e;
 
   --m43-text-primary: #171717;
-  --m43-text-muted: #6F7372;
+  --m43-text-muted: #6f7372;
 
-  --m43-border: rgba(23,23,23,.28);
-  --m43-fill: #F3F2F0;
-  --m43-fill-focus: #FFFFFF;
-  --m43-fill-complete: #F5F4F2;
+  --m43-border: rgba(23, 23, 23, 0.28);
+  --m43-fill: #f3f2f0;
+  --m43-fill-focus: #ffffff;
+  --m43-fill-complete: #f5f4f2;
   --m43-radius-input: 10px;
   --m43-radius-pill: 999px;
 
   /* Brand abstraction layer */
-  --m43-font-body: Inter, "Inter Placeholder", sans-serif;
-  --m43-font-label: "Inter Variable", Inter, sans-serif;
+  --m43-font-body: Inter, 'Inter Placeholder', sans-serif;
+  --m43-font-label: 'Inter Variable', Inter, sans-serif;
 
   --m43-accent: var(--m43-red);
   --m43-accent-dark: var(--m43-red-dark);
@@ -92,12 +92,12 @@
 }
 
 /* Fieldhouse Brand Override */
-html[data-m43-brand="fieldhouse"] {
+html[data-m43-brand='fieldhouse'] {
   --m43-font-body: Poppins, Inter, sans-serif;
   --m43-font-label: Poppins, Inter, sans-serif;
 
-  --m43-accent: #E64C38;
-  --m43-accent-dark: #C94432;
+  --m43-accent: #e64c38;
+  --m43-accent-dark: #c94432;
   --m43-accent-rgb: 230, 76, 56;
 }
 
@@ -108,20 +108,23 @@ html[data-m43-brand="fieldhouse"] {
    - Softer card borders
    --------------------------------------------------------- */
 
-html[data-m43-brand="fieldhouse"] .wFormContainer .actions input[type="submit"],
-html[data-m43-brand="fieldhouse"] .wFormContainer .wfPagingButtons input {
+html[data-m43-brand='fieldhouse'] .wFormContainer .actions input[type='submit'],
+html[data-m43-brand='fieldhouse'] .wFormContainer .wfPagingButtons input {
   border-radius: 12px !important; /* Softer than Mission43 */
-  font-weight: 600 !important;     /* Slightly stronger presence */
+  font-weight: 600 !important; /* Slightly stronger presence */
 }
 
-html[data-m43-brand="fieldhouse"] .wFormContainer .actions input[type="submit"]:hover,
-html[data-m43-brand="fieldhouse"] .wFormContainer .wfPagingButtons input:hover {
-  background: #D94A36 !important; /* Slightly warmer hover */
+html[data-m43-brand='fieldhouse']
+  .wFormContainer
+  .actions
+  input[type='submit']:hover,
+html[data-m43-brand='fieldhouse'] .wFormContainer .wfPagingButtons input:hover {
+  background: #d94a36 !important; /* Slightly warmer hover */
 }
 
-html[data-m43-brand="fieldhouse"] .wForm .choices .oneChoice label.postField {
-  border: 1px solid rgba(23,23,23,.18) !important; /* Softer than default */
-  box-shadow: 0 2px 8px rgba(0,0,0,.03);
+html[data-m43-brand='fieldhouse'] .wForm .choices .oneChoice label.postField {
+  border: 1px solid rgba(23, 23, 23, 0.18) !important; /* Softer than default */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 /* =========================================================
@@ -144,25 +147,31 @@ html[data-m43-brand="fieldhouse"] .wForm .choices .oneChoice label.postField {
 /* Preserve focus ring even when autofilled */
 .wForm input:-webkit-autofill:focus {
   border-color: var(--m43-accent) !important;
-  box-shadow: 0 0 0 3px rgba(var(--m43-accent-rgb), .12), 0 0 0 1000px var(--m43-fill) inset !important;
+  box-shadow:
+    0 0 0 3px rgba(var(--m43-accent-rgb), 0.12),
+    0 0 0 1000px var(--m43-fill) inset !important;
 }
 
 /* =========================================================
    2. GLOBAL TYPOGRAPHY NORMALIZATION
    ========================================================= */
 
-html[data-m43-brand="fieldhouse"] .wFormContainer *:not(.htmlContent):not(.htmlContent *) {
+html[data-m43-brand='fieldhouse']
+  .wFormContainer
+  *:not(.htmlContent):not(.htmlContent *) {
   font-family: var(--m43-font-body) !important;
   color: var(--m43-text-primary);
 }
 
-html[data-m43-brand="fieldhouse"] body,
-html[data-m43-brand="fieldhouse"] .wFormContainer,
-html[data-m43-brand="fieldhouse"] .wFormContainer * {
+html[data-m43-brand='fieldhouse'] body,
+html[data-m43-brand='fieldhouse'] .wFormContainer,
+html[data-m43-brand='fieldhouse'] .wFormContainer * {
   font-family: var(--m43-font-body) !important;
 }
 
-html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlContent *) {
+html[data-m43-brand='mission43']
+  .wFormContainer
+  *:not(.htmlContent):not(.htmlContent *) {
   font-family: var(--m43-font-body) !important;
   color: var(--m43-text-primary);
 }
@@ -193,16 +202,15 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
    4. INPUT SYSTEM
    ========================================================= */
 
-
-.wForm input[type="text"],
-.wForm input[type="email"],
-.wForm input[type="tel"],
-.wForm input[type="password"],
+.wForm input[type='text'],
+.wForm input[type='email'],
+.wForm input[type='tel'],
+.wForm input[type='password'],
 .wForm textarea,
 .wForm select {
   appearance: none !important;
   font-family: var(--m43-font-label) !important;
-  background: #FFFFFF !important;
+  background: #ffffff !important;
   border: 1px solid var(--m43-border) !important;
   border-radius: var(--m43-radius-input) !important;
   font-size: 16px !important;
@@ -228,7 +236,7 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 
 /* Ensure select matches default field fill before interaction */
 .wForm select {
-  background-color: #FFFFFF !important;
+  background-color: #ffffff !important;
 }
 
 /* --- Multi Select Alignment --- */
@@ -238,25 +246,25 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   min-height: 120px !important;
   font-weight: 500 !important;
   appearance: none !important;
-  background-color: #FFFFFF !important;
+  background-color: #ffffff !important;
 }
 
 /* --- Multi Select: Subtle Brand-Tinted Selected Options --- */
 .wForm select[multiple] option:checked {
-  background-color: rgba(var(--m43-accent-rgb), .08) !important;
+  background-color: rgba(var(--m43-accent-rgb), 0.08) !important;
   color: var(--m43-text-primary) !important;
 }
 
 /* Slight border emphasis when multi-select has value */
 .wForm select[multiple].m43-has-value {
-  border-color: rgba(23,23,23,.35) !important;
+  border-color: rgba(23, 23, 23, 0.35) !important;
 }
 
 /* --- Textarea Refinement --- */
 .wForm textarea {
   min-height: 120px !important;
   resize: vertical !important; /* Prevent diagonal OS chrome */
-  background-color: #FFFFFF !important;
+  background-color: #ffffff !important;
 }
 
 /* Ensure completed state works consistently */
@@ -265,15 +273,17 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   background: var(--m43-fill-complete) !important;
 }
 
-
 .wForm input:focus,
 .wForm textarea:focus,
 .wForm select:focus {
   outline: none !important;
   background: var(--m43-fill-focus) !important;
   border-color: var(--m43-accent) !important;
-  box-shadow: 0 0 0 3px rgba(var(--m43-accent-rgb), .12) !important;
-  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  box-shadow: 0 0 0 3px rgba(var(--m43-accent-rgb), 0.12) !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 /* --- Completed Field State --- */
@@ -281,13 +291,13 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 .wForm textarea.m43-has-value,
 .wForm select.m43-has-value {
   background: var(--m43-fill-complete) !important;
-  transition: background .15s ease;
+  transition: background 0.15s ease;
 }
 
-
-.wFormContainer .actions input[type="submit"],
+/* Allow FormAssembly conditional rules to hide buttons */
+.wFormContainer .actions input[type='submit'],
 .wFormContainer .wfPagingButtons input {
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center !important;
   justify-content: center !important;
   background: var(--m43-accent) !important;
@@ -303,9 +313,36 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   border: none !important;
 }
 
-.wFormContainer .actions input[type="submit"]:hover,
+.wFormContainer .actions input[type='submit']:hover,
 .wFormContainer .wfPagingButtons input:hover {
   background: var(--m43-accent-dark) !important;
+}
+
+/* =========================================================
+   5A. CONDITIONAL VISIBILITY SAFETY
+   ---------------------------------------------------------
+   Ensures FormAssembly native conditional rules can hide
+   submit / paging buttons even when core styling applies.
+   ========================================================= */
+
+/* Respect FormAssembly hidden state classes globally */
+.wForm .offstate,
+.wForm .wf-acl-hidden {
+  display: none !important;
+}
+
+/* If FA hides the actions container, ensure buttons stay hidden */
+.wFormContainer .actions[style*='display:none'] input[type='submit'],
+.wFormContainer .actions[style*='display: none'] input[type='submit'],
+.wFormContainer .actions[style*='visibility:hidden'] input[type='submit'],
+.wFormContainer .actions[style*='visibility: hidden'] input[type='submit'] {
+  display: none !important;
+}
+
+/* Allow direct inline hide applied to button itself */
+.wFormContainer .actions input[type='submit'][style*='display:none'],
+.wFormContainer .actions input[type='submit'][style*='display: none'] {
+  display: none !important;
 }
 
 /* =========================================================
@@ -318,15 +355,17 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 .m43-error-summary {
   margin-bottom: 20px;
   padding: 16px 16px;
-  background: rgba(var(--m43-accent-rgb), .08);
+  background: rgba(var(--m43-accent-rgb), 0.08);
   border-left: 3px solid var(--m43-accent);
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.6;
-  box-shadow: 0 6px 18px rgba(0,0,0,.04);
-  animation: m43FadeIn .18s ease-out;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+  animation: m43FadeIn 0.18s ease-out;
   scroll-margin-top: 32px;
-  transition: opacity .18s ease, transform .18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .m43-error-summary.m43-summary-resolving {
@@ -363,7 +402,7 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 }
 
 .m43-error-summary-heading::before {
-  content: "⚠";
+  content: '⚠';
   font-size: 14px;
 }
 
@@ -392,13 +431,12 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 }
 
 .m43-inline-error::before {
-  content: "⚠";
+  content: '⚠';
   font-size: 12px;
   line-height: 1.2;
   margin-top: 2px;
   opacity: 0.9;
 }
-
 
 /* --- 6C. Field Error State --- */
 
@@ -406,32 +444,49 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 .wForm textarea.m43-field-error,
 .wForm select.m43-field-error {
   border-color: var(--m43-accent) !important;
-  box-shadow: 0 0 0 3px rgba(var(--m43-accent-rgb), .12) !important;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  box-shadow: 0 0 0 3px rgba(var(--m43-accent-rgb), 0.12) !important;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 /* --- 6D. Field Container Error Highlight --- */
 
 .wForm .oneField.m43-field-container-error {
-  background: rgba(var(--m43-accent-rgb), .04);
+  background: rgba(var(--m43-accent-rgb), 0.04);
   border-left: 3px solid var(--m43-accent);
   border-radius: 12px;
   padding: 8px 12px 12px 12px;
-  transition: background .15s ease, border-color .15s ease, transform .12s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
 }
 
 /* --- Subtle shake on first invalid submit --- */
 @keyframes m43SubtleShake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-2px); }
-  40% { transform: translateX(2px); }
-  60% { transform: translateX(-1px); }
-  80% { transform: translateX(1px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-2px);
+  }
+  40% {
+    transform: translateX(2px);
+  }
+  60% {
+    transform: translateX(-1px);
+  }
+  80% {
+    transform: translateX(1px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .wForm .oneField.m43-shake {
-  animation: m43SubtleShake .25s ease;
+  animation: m43SubtleShake 0.25s ease;
 }
 
 /* =========================================================
@@ -453,8 +508,8 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   margin-bottom: 12px !important;
 }
 
-.wForm input[type="checkbox"],
-.wForm input[type="radio"] {
+.wForm input[type='checkbox'],
+.wForm input[type='radio'] {
   position: absolute !important;
   opacity: 0 !important;
   pointer-events: none !important;
@@ -473,7 +528,7 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   gap: 14px !important;
   width: 100% !important;
   padding: 14px 16px !important;
-  background: #FFFFFF !important;
+  background: #ffffff !important;
   border-radius: 10px !important;
   /* Card border uses --m43-border token.
      Do not hardcode border colors here.
@@ -482,7 +537,10 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   font-size: 14px !important;
   font-weight: 500 !important;
   cursor: pointer !important;
-  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease !important;
   box-sizing: border-box !important;
 }
 
@@ -522,13 +580,23 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
   background-image: none !important;
 }
 
-.wForm .choices .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux {
+.wForm
+  .choices
+  .oneChoice
+  input[type='radio']:checked
+  + label.postField
+  .input-radio-faux {
   background: var(--m43-accent) !important;
   border-color: var(--m43-accent) !important;
 }
 
-.wForm .choices .oneChoice input[type="radio"]:checked + label.postField .input-radio-faux::after {
-  content: "" !important;
+.wForm
+  .choices
+  .oneChoice
+  input[type='radio']:checked
+  + label.postField
+  .input-radio-faux::after {
+  content: '' !important;
   position: absolute !important;
   width: 8px !important;
   height: 8px !important;
@@ -540,18 +608,28 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 }
 
 .wForm .choices .oneChoice input:checked + label.postField {
-  background: rgba(var(--m43-accent-rgb), .06) !important;
+  background: rgba(var(--m43-accent-rgb), 0.06) !important;
   border-color: var(--m43-accent) !important;
 }
 
 /* Checked check indicator */
-.wForm .choices .oneChoice input:checked + label.postField .input-checkbox-faux {
+.wForm
+  .choices
+  .oneChoice
+  input:checked
+  + label.postField
+  .input-checkbox-faux {
   background: var(--m43-accent) !important;
   border-color: var(--m43-accent) !important;
 }
 
-.wForm .choices .oneChoice input:checked + label.postField .input-checkbox-faux::after {
-  content: "" !important;
+.wForm
+  .choices
+  .oneChoice
+  input:checked
+  + label.postField
+  .input-checkbox-faux::after {
+  content: '' !important;
   position: absolute !important;
   left: 4px !important;
   top: 1px !important;
@@ -563,14 +641,15 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
 }
 
 @media (min-width: 769px) {
-
   .wForm .choices .oneChoice label.postField:hover {
-    border-color: rgba(23,23,23,.35) !important;
-    box-shadow: 0 4px 14px rgba(0,0,0,.06) !important;
+    border-color: rgba(23, 23, 23, 0.35) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
     transform: translateY(-1px);
-    transition: border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.12s ease;
   }
-
 }
 
 /* -------------------------------------------------
@@ -591,7 +670,6 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
    ========================================================= */
 
 @media (min-width: 768px) {
-
   .wForm .removeable.section.inline.group {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
@@ -613,7 +691,6 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
    ========================================================= */
 
 @media (max-width: 768px) {
-
   /* =========================================================
      TABLE COLUMN LAYOUT OVERRIDE (FormAssembly default 2-col layout)
      Forces columnLayout tables to stack on mobile
@@ -636,7 +713,7 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
     padding: 0 16px;
   }
 
-  .wFormContainer .actions input[type="submit"],
+  .wFormContainer .actions input[type='submit'],
   .wFormContainer .wfPagingButtons input {
     width: 100% !important;
   }
@@ -753,7 +830,6 @@ html[data-m43-brand="mission43"] .wFormContainer *:not(.htmlContent):not(.htmlCo
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-
   .wForm .oneField.m43-shake {
     animation: none !important;
   }
