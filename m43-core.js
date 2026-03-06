@@ -765,6 +765,19 @@ const ENABLE_IDENTIFIER =
   // =========================================================
   function standardizeDateInputs(form) {
     if (!form) return
+    // Auto-detect likely date fields when FormAssembly cannot assign CSS classes.
+    // If a text input's label contains the word "Date", treat it as a date field.
+    const textInputs = form.querySelectorAll('input[type="text"]')
+    textInputs.forEach((input) => {
+      const container = input.closest('.oneField')
+      if (!container) return
+      const label = container.querySelector('label')
+      if (!label) return
+      const labelText = (label.textContent || '').toLowerCase()
+      if (labelText.includes('date') && !input.classList.contains('validate-date')) {
+        input.classList.add('validate-date')
+      }
+    })
     const dateInputs = form.querySelectorAll('input[type="date"], input.validate-date')
 
     dateInputs.forEach((input) => {
@@ -782,9 +795,10 @@ const ENABLE_IDENTIFIER =
         input.classList.add('validate-date')
       }
 
-      // Mobile keypad hint (does not introduce a picker)
+      // Mobile keyboard hint — allow numbers AND separators for better UX
+      // Using "text" avoids iOS numeric keypad which hides "-" and "/"
       if (!input.getAttribute('inputmode')) {
-        input.setAttribute('inputmode', 'numeric')
+        input.setAttribute('inputmode', 'text')
       }
 
       // UX hint (safe)
@@ -821,6 +835,14 @@ const ENABLE_IDENTIFIER =
 function normalizeDateToMDY(raw) {
   const v = (raw || '').toString().trim()
   if (!v) return ''
+  // Support 8-digit numeric dates like MMDDYYYY (e.g., 01141976)
+  if (/^\d{8}$/.test(v)) {
+    const mm = v.substring(0, 2)
+    const dd = v.substring(2, 4)
+    const yyyy = v.substring(4, 8)
+    const candidate = `${mm}-${dd}-${yyyy}`
+    return normalizeDateToMDY(candidate)
+  }
 
   // Accept common separators; standardize to '-'
   const cleaned = v.replace(/\s+/g, '').replace(/\//g, '-').replace(/\./g, '-')
